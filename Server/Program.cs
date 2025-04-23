@@ -2,22 +2,22 @@
 using System.Net;
 using System.Linq;
 using System.Text;
+using Server.Data;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Net.Sockets;
-using Server.Data;
 
 namespace Server
 {
     class Program
     {
-        private const int PORT = 9000;
+        private static readonly int port = Common.Params.GetPort();
 
         static void Main(string[] args)
         {
-            var listener = new TcpListener(IPAddress.Loopback, PORT);
+            var listener = new TcpListener(IPAddress.Loopback, port);
             listener.Start();
-            Console.WriteLine($"TCP server listening on port {PORT}...");
+            Console.WriteLine($"TCP server listening on port {port}...");
 
             while (true)
             {
@@ -92,9 +92,12 @@ namespace Server
             }
         }
 
+
         // ---------- Business ----------
         private static (int status, object data) ProcessCommand(RequestMessage req)
         {
+            int statusCode = 0;  // הגדרת statusCode באופן גלובלי בתוך המתודה
+
             try
             {
                 using var db = new ApplicationDbContext();
@@ -102,16 +105,47 @@ namespace Server
                 switch (req.Command?.ToLowerInvariant())
                 {
                     case "getall":
-                        return (0, db.Bookings.ToList());
+                        return (statusCode, db.Bookings.ToList());
 
                     case "get":
                         var item = db.Bookings.Find(req.Id);
-                        return item == null ? (1, "Not found") : (0, item);
+                        return item == null ? (1, "Not found") : (statusCode, item);
 
                     case "create":
                         db.Bookings.Add(req.Booking);
                         db.SaveChanges();
-                        return (201, req.Booking);
+                        statusCode = 201; // Created
+                        return (statusCode, req.Booking);
+
+                    case "update":
+                        var updateItem = db.Bookings.Find(req.Id);
+                        if (updateItem != null)
+                        {
+                            updateItem.GuestName = req.Booking.GuestName;
+                            db.SaveChanges();
+                            statusCode = 200; // OK
+                            return (statusCode, updateItem);
+                        }
+                        else
+                        {
+                            statusCode = 1; // Not Found
+                            return (statusCode, "Booking not found for update");
+                        }
+
+                    case "delete":
+                        var deleteItem = db.Bookings.Find(req.Id);
+                        if (deleteItem != null)
+                        {
+                            db.Bookings.Remove(deleteItem);
+                            db.SaveChanges();
+                            statusCode = 204; // No Content
+                            return (statusCode, "Booking deleted");
+                        }
+                        else
+                        {
+                            statusCode = 1; // Not Found
+                            return (statusCode, "Booking not found for deletion");
+                        }
 
                     default:
                         return (2, $"Unknown command '{req.Command}'");
