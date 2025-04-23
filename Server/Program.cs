@@ -9,10 +9,20 @@ using System.Net.Sockets;
 
 namespace Server
 {
+    /// <summary>
+    /// Entry point for the server application.
+    /// </summary>
     class Program
     {
+        /// <summary>
+        /// The port number the server listens on.
+        /// </summary>
         private static readonly int port = Common.Params.GetPort();
 
+        /// <summary>
+        /// Main method to start the TCP server.
+        /// </summary>
+        /// <param name="args">Command-line arguments.</param>
         static void Main(string[] args)
         {
             var listener = new TcpListener(IPAddress.Loopback, port);
@@ -26,6 +36,10 @@ namespace Server
             }
         }
 
+        /// <summary>
+        /// Handles communication with a connected client.
+        /// </summary>
+        /// <param name="client">The connected TCP client.</param>
         static void HandleClient(TcpClient client)
         {
             try
@@ -33,7 +47,6 @@ namespace Server
                 using (client)
                 using (var stream = client.GetStream())
                 {
-                    // קריאה של ההודעה מהקליינט
                     var req = ReadRequest(stream);
                     object result = null;
                     int statusCode = 0; // 0 = OK, 1 = NotFound, 2 = Error
@@ -74,7 +87,6 @@ namespace Server
                         result = ex.Message;
                     }
 
-                    // שליחת תגובה
                     WriteResponse(stream, new ResponseMessage
                     {
                         Status = statusCode,
@@ -92,11 +104,14 @@ namespace Server
             }
         }
 
-
-        // ---------- Business ----------
+        /// <summary>
+        /// Processes a command from the client and interacts with the database.
+        /// </summary>
+        /// <param name="req">The request message containing the command and data.</param>
+        /// <returns>A tuple containing the status code and the result data.</returns>
         private static (int status, object data) ProcessCommand(RequestMessage req)
         {
-            int statusCode = 0;  // הגדרת statusCode באופן גלובלי בתוך המתודה
+            int statusCode = 0;
 
             try
             {
@@ -157,7 +172,11 @@ namespace Server
             }
         }
 
-        // ---------- Framing helpers ----------
+        /// <summary>
+        /// Reads a request message from the network stream.
+        /// </summary>
+        /// <param name="s">The network stream to read from.</param>
+        /// <returns>The deserialized request message.</returns>
         private static RequestMessage ReadRequest(NetworkStream s)
         {
             var lenBuf = new byte[4];
@@ -172,6 +191,11 @@ namespace Server
             return JsonConvert.DeserializeObject<RequestMessage>(json);
         }
 
+        /// <summary>
+        /// Writes a response message to the network stream.
+        /// </summary>
+        /// <param name="s">The network stream to write to.</param>
+        /// <param name="resp">The response message to send.</param>
         private static void WriteResponse(NetworkStream s, ResponseMessage resp)
         {
             var json = JsonConvert.SerializeObject(resp);
@@ -180,6 +204,5 @@ namespace Server
             s.Write(len, 0, 4);
             s.Write(buf, 0, buf.Length);
         }
-
     }
 }

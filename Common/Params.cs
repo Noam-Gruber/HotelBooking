@@ -7,7 +7,8 @@ namespace Common
     public static class Params
     {
         private static JObject? _config;
-        private static readonly string JsonFilePath = Path.Combine(Environment.CurrentDirectory, "Configuration.json");
+        private static readonly string baseProject = Directory.GetParent(Directory.GetParent(Directory.GetParent(Environment.CurrentDirectory).FullName).FullName).FullName;
+        private static readonly string JsonFilePath = Path.Combine(baseProject, "Common\\Configuration.json");
 
         /// <summary>
         /// Static constructor to load the configuration.

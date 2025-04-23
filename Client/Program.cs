@@ -1,4 +1,5 @@
 ﻿using System;
+using Client.Forms;
 using System.Windows.Forms;
 
 namespace Client
@@ -13,7 +14,7 @@ namespace Client
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+            Application.Run(new LoginForm());
         }
     }
 }

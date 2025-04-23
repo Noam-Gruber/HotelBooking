@@ -1,6 +1,8 @@
 ﻿using System;
 using Common;
+using System.IO;
 using System.Text;
+using System.Drawing;
 using Newtonsoft.Json;
 using System.Net.Sockets;
 using System.Windows.Forms;
@@ -20,12 +22,37 @@ namespace Client
         /// </summary>
         private readonly int SERVER_PORT = Params.GetPort();
 
+        private int currentImageIndex = 0;
+        private string[] hotelImages = new string[]
+        {
+           Path.Combine(Directory.GetParent(Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName).FullName).FullName, @"Images\hotel1.png"),
+           Path.Combine(Directory.GetParent(Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName).FullName).FullName, @"Images\hotel2.png"),
+           Path.Combine(Directory.GetParent(Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName).FullName).FullName, @"Images\hotel3.png")
+        };
+
+        // Timer שמריץ את האנימציה
+        private void StartSlideshow()
+        {
+            Timer timer = new Timer();
+            timer.Interval = 3000;
+            timer.Tick += (sender, e) =>
+            {
+                if (currentImageIndex >= hotelImages.Length)
+                    currentImageIndex = 0;
+                pictureBox.Image = Image.FromFile(hotelImages[currentImageIndex]);
+                currentImageIndex++;
+            };
+            timer.Start();
+        }
+
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MainForm"/> class.
         /// </summary>
         public MainForm()
         {
             InitializeComponent();
+            StartSlideshow();
             cmbRoomType.SelectedIndex = 0;
             dtpCheckIn.Value = DateTime.Today;
             dtpCheckOut.Value = DateTime.Today.AddDays(2);

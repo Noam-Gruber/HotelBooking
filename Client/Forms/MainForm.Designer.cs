@@ -52,7 +52,9 @@ namespace Client
             this.label6 = new System.Windows.Forms.Label();
             this.txtId = new System.Windows.Forms.TextBox();
             this.label8 = new System.Windows.Forms.Label();
+            this.pictureBox = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.numGuests)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).BeginInit();
             this.SuspendLayout();
             // 
             // txtGuestName
@@ -280,11 +282,21 @@ namespace Client
             this.label8.TabIndex = 25;
             this.label8.Text = "Lookup ID 🔍:";
             // 
+            // pictureBox
+            // 
+            this.pictureBox.Location = new System.Drawing.Point(446, 61);
+            this.pictureBox.Name = "pictureBox";
+            this.pictureBox.Size = new System.Drawing.Size(301, 375);
+            this.pictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pictureBox.TabIndex = 26;
+            this.pictureBox.TabStop = false;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(713, 514);
+            this.ClientSize = new System.Drawing.Size(782, 514);
+            this.Controls.Add(this.pictureBox);
             this.Controls.Add(this.label8);
             this.Controls.Add(this.txtId);
             this.Controls.Add(this.label6);
@@ -312,6 +324,7 @@ namespace Client
             this.Name = "MainForm";
             this.Text = "HotelBookingHub Client";
             ((System.ComponentModel.ISupportInitialize)(this.numGuests)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -341,6 +354,7 @@ namespace Client
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.TextBox txtId;
         private System.Windows.Forms.Label label8;
+        private System.Windows.Forms.PictureBox pictureBox;
     }
 }
 
