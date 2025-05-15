@@ -1,5 +1,6 @@
 ﻿using System;
 using Common;
+using Common.Entities;
 using System.IO;
 using System.Text;
 using System.Drawing;

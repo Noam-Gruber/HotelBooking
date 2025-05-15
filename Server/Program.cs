@@ -6,6 +6,7 @@ using Server.Data;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Net.Sockets;
+using System.Data.Entity.Infrastructure;
 
 namespace Server
 {
@@ -58,7 +59,10 @@ namespace Server
                             switch (req.Command?.ToLowerInvariant())
                             {
                                 case "getall":
-                                    result = db.Bookings.ToList();
+                                    result = db.Bookings
+                                               .OrderBy(b => b.CheckInDate)
+                                               .ToList();
+                                    statusCode = 0;          // OK
                                     break;
 
                                 case "get":
@@ -68,10 +72,28 @@ namespace Server
                                     break;
 
                                 case "create":
-                                    db.Bookings.Add(req.Booking);
-                                    db.SaveChanges();
-                                    result = req.Booking;
-                                    statusCode = 201; // created
+                                    //db.Bookings.Add(req.Booking);
+                                    //db.SaveChanges();
+                                    //result = req.Booking;
+                                    //statusCode = 201; // created
+                                    try
+                                    {
+                                        db.Bookings.Add(req.Booking);
+                                        db.SaveChanges();
+                                        result = req.Booking;
+                                        statusCode = 201;
+                                    }
+                                    catch (System.Data.Entity.Infrastructure.DbUpdateException ex)
+                                    {
+                                        var baseErr = ex.GetBaseException();
+                                        Console.ForegroundColor = ConsoleColor.Red;
+                                        Console.WriteLine($"[EF] {baseErr.Message}");
+                                        Console.ResetColor();
+
+                                        result = baseErr.Message;
+                                        statusCode = 2;
+                                        throw;
+                                    }
                                     break;
 
                                 default:
