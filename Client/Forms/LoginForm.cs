@@ -26,7 +26,7 @@ namespace Client.Forms
             else if (username.Length > 0 && password.Length > 0)
             {
                 MessageBox.Show("Welcome, Customer!", "Login Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                var bookingForm = new MainForm();
+                var bookingForm = new BookingForm();
                 bookingForm.Show();
                 this.Hide();
             }
