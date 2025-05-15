@@ -62,6 +62,10 @@
     <Compile Include="Migrations\202505141845156_InitialCreate.Designer.cs">
       <DependentUpon>202505141845156_InitialCreate.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202505151948018_UpdateBookingModel.cs" />
+    <Compile Include="Migrations\202505151948018_UpdateBookingModel.Designer.cs">
+      <DependentUpon>202505151948018_UpdateBookingModel.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -79,6 +83,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Migrations\202505141845156_InitialCreate.resx">
       <DependentUpon>202505141845156_InitialCreate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202505151948018_UpdateBookingModel.resx">
+      <DependentUpon>202505151948018_UpdateBookingModel.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

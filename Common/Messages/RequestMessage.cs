@@ -1,11 +1,11 @@
 ﻿using Common.Entities;
 
-namespace Server
+namespace Common.Messages
 {
     public class RequestMessage
     {
-        public string Command { get; set; }    // "GetAll", "Get", "Create"
-        public int Id { get; set; }    // עבור "Get"
-        public Booking Booking { get; set; }    // עבור "Create"
+        public string Command { get; set; }
+        public int Id { get; set; }
+        public Booking Booking { get; set; }
     }
 }

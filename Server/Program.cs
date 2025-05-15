@@ -1,29 +1,20 @@
-﻿using System;
-using System.Net;
-using System.Linq;
-using System.Text;
-using Server.Data;
+﻿using Common.Entities;
+using Common.Messages;
 using Newtonsoft.Json;
-using System.Threading;
+using Server.Data;
+using System;
+using System.Linq;
+using System.Net;
 using System.Net.Sockets;
-using System.Data.Entity.Infrastructure;
+using System.Text;
+using System.Threading;
 
 namespace Server
 {
-    /// <summary>
-    /// Entry point for the server application.
-    /// </summary>
     class Program
     {
-        /// <summary>
-        /// The port number the server listens on.
-        /// </summary>
         private static readonly int port = Common.Params.GetPort();
 
-        /// <summary>
-        /// Main method to start the TCP server.
-        /// </summary>
-        /// <param name="args">Command-line arguments.</param>
         static void Main(string[] args)
         {
             var listener = new TcpListener(IPAddress.Loopback, port);
@@ -37,10 +28,6 @@ namespace Server
             }
         }
 
-        /// <summary>
-        /// Handles communication with a connected client.
-        /// </summary>
-        /// <param name="client">The connected TCP client.</param>
         static void HandleClient(TcpClient client)
         {
             try
@@ -49,8 +36,6 @@ namespace Server
                 using (var stream = client.GetStream())
                 {
                     var req = ReadRequest(stream);
-                    object result = null;
-                    int statusCode = 0; // 0 = OK, 1 = NotFound, 2 = Error
 
                     try
                     {
@@ -59,29 +44,44 @@ namespace Server
                             switch (req.Command?.ToLowerInvariant())
                             {
                                 case "getall":
-                                    result = db.Bookings
-                                               .OrderBy(b => b.CheckInDate)
-                                               .ToList();
-                                    statusCode = 0;          // OK
+                                    var list = db.Bookings.OrderBy(b => b.CheckInDate).ToList();
+                                    WriteResponse(stream, new ResponseMessage<System.Collections.Generic.List<Booking>>
+                                    {
+                                        Status = 0,
+                                        Data = list
+                                    });
                                     break;
 
                                 case "get":
                                     var item = db.Bookings.Find(req.Id);
-                                    if (item == null) statusCode = 1;
-                                    else result = item;
+                                    if (item == null)
+                                    {
+                                        WriteResponse(stream, new ResponseMessage<string>
+                                        {
+                                            Status = 1,
+                                            Data = "Booking not found"
+                                        });
+                                    }
+                                    else
+                                    {
+                                        WriteResponse(stream, new ResponseMessage<Booking>
+                                        {
+                                            Status = 0,
+                                            Data = item
+                                        });
+                                    }
                                     break;
 
                                 case "create":
-                                    //db.Bookings.Add(req.Booking);
-                                    //db.SaveChanges();
-                                    //result = req.Booking;
-                                    //statusCode = 201; // created
                                     try
                                     {
                                         db.Bookings.Add(req.Booking);
                                         db.SaveChanges();
-                                        result = req.Booking;
-                                        statusCode = 201;
+                                        WriteResponse(stream, new ResponseMessage<Booking>
+                                        {
+                                            Status = 201,
+                                            Data = req.Booking
+                                        });
                                     }
                                     catch (System.Data.Entity.Infrastructure.DbUpdateException ex)
                                     {
@@ -89,31 +89,77 @@ namespace Server
                                         Console.ForegroundColor = ConsoleColor.Red;
                                         Console.WriteLine($"[EF] {baseErr.Message}");
                                         Console.ResetColor();
+                                        WriteResponse(stream, new ResponseMessage<string>
+                                        {
+                                            Status = 2,
+                                            Data = baseErr.Message
+                                        });
+                                    }
+                                    break;
 
-                                        result = baseErr.Message;
-                                        statusCode = 2;
-                                        throw;
+                                case "update":
+                                    var updateItem = db.Bookings.Find(req.Booking.Id);
+                                    if (updateItem != null)
+                                    {
+                                        updateItem.GuestName = req.Booking.GuestName;
+                                        // ... תעדכן פה עוד שדות לפי הצורך
+                                        db.SaveChanges();
+                                        WriteResponse(stream, new ResponseMessage<Booking>
+                                        {
+                                            Status = 200,
+                                            Data = updateItem
+                                        });
+                                    }
+                                    else
+                                    {
+                                        WriteResponse(stream, new ResponseMessage<string>
+                                        {
+                                            Status = 1,
+                                            Data = "Booking not found for update"
+                                        });
+                                    }
+                                    break;
+
+                                case "delete":
+                                    var deleteItem = db.Bookings.Find(req.Id);
+                                    if (deleteItem != null)
+                                    {
+                                        db.Bookings.Remove(deleteItem);
+                                        db.SaveChanges();
+                                        WriteResponse(stream, new ResponseMessage<string>
+                                        {
+                                            Status = 204,
+                                            Data = "Booking deleted"
+                                        });
+                                    }
+                                    else
+                                    {
+                                        WriteResponse(stream, new ResponseMessage<string>
+                                        {
+                                            Status = 1,
+                                            Data = "Booking not found for deletion"
+                                        });
                                     }
                                     break;
 
                                 default:
-                                    statusCode = 2;
-                                    result = $"Unknown command '{req.Command}'";
+                                    WriteResponse(stream, new ResponseMessage<string>
+                                    {
+                                        Status = 2,
+                                        Data = $"Unknown command '{req.Command}'"
+                                    });
                                     break;
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        statusCode = 2;
-                        result = ex.Message;
+                        WriteResponse(stream, new ResponseMessage<string>
+                        {
+                            Status = 2,
+                            Data = ex.Message
+                        });
                     }
-
-                    WriteResponse(stream, new ResponseMessage
-                    {
-                        Status = statusCode,
-                        Data = result
-                    });
                 }
             }
             catch (Exception ex)
@@ -126,79 +172,6 @@ namespace Server
             }
         }
 
-        /// <summary>
-        /// Processes a command from the client and interacts with the database.
-        /// </summary>
-        /// <param name="req">The request message containing the command and data.</param>
-        /// <returns>A tuple containing the status code and the result data.</returns>
-        private static (int status, object data) ProcessCommand(RequestMessage req)
-        {
-            int statusCode = 0;
-
-            try
-            {
-                using var db = new ApplicationDbContext();
-
-                switch (req.Command?.ToLowerInvariant())
-                {
-                    case "getall":
-                        return (statusCode, db.Bookings.ToList());
-
-                    case "get":
-                        var item = db.Bookings.Find(req.Id);
-                        return item == null ? (1, "Not found") : (statusCode, item);
-
-                    case "create":
-                        db.Bookings.Add(req.Booking);
-                        db.SaveChanges();
-                        statusCode = 201; // Created
-                        return (statusCode, req.Booking);
-
-                    case "update":
-                        var updateItem = db.Bookings.Find(req.Id);
-                        if (updateItem != null)
-                        {
-                            updateItem.GuestName = req.Booking.GuestName;
-                            db.SaveChanges();
-                            statusCode = 200; // OK
-                            return (statusCode, updateItem);
-                        }
-                        else
-                        {
-                            statusCode = 1; // Not Found
-                            return (statusCode, "Booking not found for update");
-                        }
-
-                    case "delete":
-                        var deleteItem = db.Bookings.Find(req.Id);
-                        if (deleteItem != null)
-                        {
-                            db.Bookings.Remove(deleteItem);
-                            db.SaveChanges();
-                            statusCode = 204; // No Content
-                            return (statusCode, "Booking deleted");
-                        }
-                        else
-                        {
-                            statusCode = 1; // Not Found
-                            return (statusCode, "Booking not found for deletion");
-                        }
-
-                    default:
-                        return (2, $"Unknown command '{req.Command}'");
-                }
-            }
-            catch (Exception ex)
-            {
-                return (2, ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Reads a request message from the network stream.
-        /// </summary>
-        /// <param name="s">The network stream to read from.</param>
-        /// <returns>The deserialized request message.</returns>
         private static RequestMessage ReadRequest(NetworkStream s)
         {
             var lenBuf = new byte[4];
@@ -213,12 +186,7 @@ namespace Server
             return JsonConvert.DeserializeObject<RequestMessage>(json);
         }
 
-        /// <summary>
-        /// Writes a response message to the network stream.
-        /// </summary>
-        /// <param name="s">The network stream to write to.</param>
-        /// <param name="resp">The response message to send.</param>
-        private static void WriteResponse(NetworkStream s, ResponseMessage resp)
+        private static void WriteResponse<T>(NetworkStream s, ResponseMessage<T> resp)
         {
             var json = JsonConvert.SerializeObject(resp);
             var buf = Encoding.UTF8.GetBytes(json);

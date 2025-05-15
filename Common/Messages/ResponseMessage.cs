@@ -1,9 +1,8 @@
-﻿
-namespace Server
+﻿namespace Common.Messages
 {
-    public class ResponseMessage
+    public class ResponseMessage<T>
     {
-        public int Status { get; set; }    // 0=OK,1=NotFound,2=Error,201=Created
-        public object Data { get; set; }    // Booking או List<Booking> או שגיאה
+        public int Status { get; set; }
+        public T Data { get; set; }
     }
 }
