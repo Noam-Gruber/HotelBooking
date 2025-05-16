@@ -11,13 +11,13 @@ namespace Client
 {
     internal class BookingApi
     {
-        private const int PORT = 9000;
+        private readonly int _port = Params.GetPort();
         private readonly string _host = Params.GetServerAddress();
 
         private TcpClient Connect()
         {
             var client = new TcpClient();
-            client.Connect(_host, PORT);
+            client.Connect(_host, _port);
             return client;
         }
 

@@ -102,7 +102,6 @@ namespace Server
                                     if (updateItem != null)
                                     {
                                         updateItem.GuestName = req.Booking.GuestName;
-                                        // ... תעדכן פה עוד שדות לפי הצורך
                                         db.SaveChanges();
                                         WriteResponse(stream, new ResponseMessage<Booking>
                                         {
