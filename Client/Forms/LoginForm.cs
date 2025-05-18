@@ -3,14 +3,25 @@ using System.Windows.Forms;
 
 namespace Client.Forms
 {
+    /// <summary>
+    /// Represents the login form for the application.
+    /// </summary>
     public partial class LoginForm : Form
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LoginForm"/> class.
+        /// </summary>
         public LoginForm()
         {
             InitializeComponent();
             txtPassword.PasswordChar = '*';
         }
 
+        /// <summary>
+        /// Handles the Login button click event. Authenticates the user and opens the appropriate form.
+        /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event arguments.</param>
         private void btnLogin_Click(object sender, EventArgs e)
         {
             string username = txtUsername.Text.Trim();

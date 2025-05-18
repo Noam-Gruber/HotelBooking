@@ -21,15 +21,29 @@ namespace Client
         /// </summary>
         public Booking NewBooking { get; private set; }
 
+        /// <summary>
+        /// The server host address.
+        /// </summary>
         private readonly string SERVER_HOST = Params.GetServerAddress();
+
+        /// <summary>
+        /// The server port number.
+        /// </summary>
         private readonly int SERVER_PORT = Params.GetPort();
 
+        /// <summary>
+        /// The current index of the hotel image being displayed.
+        /// </summary>
         private int currentImageIndex = 0;
+
+        /// <summary>
+        /// Array of hotel image file paths for the slideshow.
+        /// </summary>
         private string[] hotelImages = new string[]
         {
-            Path.Combine(Directory.GetParent(Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName).FullName).FullName, @"Images\hotel1.png"),
-            Path.Combine(Directory.GetParent(Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName).FullName).FullName, @"Images\hotel2.png"),
-            Path.Combine(Directory.GetParent(Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName).FullName).FullName, @"Images\hotel3.png")
+                Path.Combine(Directory.GetParent(Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName).FullName).FullName, @"Images\hotel1.png"),
+                Path.Combine(Directory.GetParent(Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName).FullName).FullName, @"Images\hotel2.png"),
+                Path.Combine(Directory.GetParent(Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName).FullName).FullName, @"Images\hotel3.png")
         };
 
         /// <summary>
@@ -111,18 +125,18 @@ namespace Client
                 if (resp.Status == 201)
                 {
                     NewBooking = resp.Data;
-                    MessageBox.Show("ההזמנה בוצעה בהצלחה! (ID=" + NewBooking.Id + ")", "הצלחה", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Booking completed successfully! (ID=" + NewBooking.Id + ")", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     this.DialogResult = DialogResult.OK;
                     this.Close();
                 }
                 else
                 {
-                    MessageBox.Show("אירעה שגיאה: " + resp.Data, "שגיאת שרת", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("An error occurred: " + resp.Data, "Server Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("שגיאה בקליינט: " + ex.Message, "שגיאה", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Client error: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -218,6 +232,11 @@ namespace Client
             }
         }
 
+        /// <summary>
+        /// Handles the Get button click event. (Currently not implemented.)
+        /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event arguments.</param>
         private void btnGet_Click(object sender, EventArgs e)
         {
 

@@ -1,20 +1,30 @@
-﻿using Common.Entities;
+﻿using System;
+using System.Net;
+using Server.Data;
+using System.Text;
+using System.Linq;
+using Common.Entities;
 using Common.Messages;
 using Newtonsoft.Json;
-using Server.Data;
-using System;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading;
+using System.Net.Sockets;
 
 namespace Server
 {
+    /// <summary>
+    /// Entry point for the server application. Handles incoming TCP client connections and processes booking requests.
+    /// </summary>
     class Program
     {
+        /// <summary>
+        /// The TCP port on which the server listens for incoming connections.
+        /// </summary>
         private static readonly int port = Common.Params.GetPort();
 
+        /// <summary>
+        /// Main entry point. Starts the TCP listener and handles incoming client connections.
+        /// </summary>
+        /// <param name="args">Command-line arguments.</param>
         static void Main(string[] args)
         {
             var listener = new TcpListener(IPAddress.Loopback, port);
@@ -28,6 +38,10 @@ namespace Server
             }
         }
 
+        /// <summary>
+        /// Handles a single client connection, processes the request, and sends a response.
+        /// </summary>
+        /// <param name="client">The connected TCP client.</param>
         static void HandleClient(TcpClient client)
         {
             try
@@ -171,6 +185,11 @@ namespace Server
             }
         }
 
+        /// <summary>
+        /// Reads a request message from the network stream.
+        /// </summary>
+        /// <param name="s">The network stream to read from.</param>
+        /// <returns>The deserialized <see cref="RequestMessage"/> object.</returns>
         private static RequestMessage ReadRequest(NetworkStream s)
         {
             var lenBuf = new byte[4];
@@ -185,6 +204,12 @@ namespace Server
             return JsonConvert.DeserializeObject<RequestMessage>(json);
         }
 
+        /// <summary>
+        /// Serializes and writes a response message to the network stream.
+        /// </summary>
+        /// <typeparam name="T">The type of the data in the response.</typeparam>
+        /// <param name="s">The network stream to write to.</param>
+        /// <param name="resp">The response message to send.</param>
         private static void WriteResponse<T>(NetworkStream s, ResponseMessage<T> resp)
         {
             var json = JsonConvert.SerializeObject(resp);
