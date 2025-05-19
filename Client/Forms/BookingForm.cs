@@ -32,11 +32,6 @@ namespace Client
         private readonly int SERVER_PORT = Params.GetPort();
 
         /// <summary>
-        /// The current index of the hotel image being displayed.
-        /// </summary>
-        private int currentImageIndex = 0;
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="BookingForm"/> class.
         /// </summary>
         public BookingForm()
@@ -203,6 +198,35 @@ namespace Client
             {
                 e.Handled = true;
             }
+        }
+        private void UpdateSummary()
+        {
+            lblSummary.Text = $"Booking: {numGuests.Value} guests, {cmbRoomType.SelectedItem}, " +
+                              $"{dtpCheckIn.Value:dd/MM/yyyy} - {dtpCheckOut.Value:dd/MM/yyyy}";
+        }
+        private void numGuests_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateSummary();
+        }
+
+        private void cmbRoomType_TextChanged(object sender, EventArgs e)
+        {
+            UpdateSummary();
+        }
+
+        private void txtGuestName_TextChanged(object sender, EventArgs e)
+        {
+            UpdateSummary();
+        }
+
+        private void dtpCheckIn_ValueChanged_1(object sender, EventArgs e)
+        {
+            UpdateSummary();
+        }
+
+        private void dtpCheckOut_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateSummary();
         }
     }
 }

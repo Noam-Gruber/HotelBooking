@@ -32,15 +32,6 @@ namespace Client.Forms
         public AdminForm()
         {
             InitializeComponent();
-
-            // Event wiring (if not connected in Designer)
-            txtSearch.TextChanged += txtSearch_TextChanged;
-            btnAdd.Click += btnAdd_Click;
-            btnRefresh.Click += btnRefresh_Click;
-            dataGridView.CellEndEdit += dataGridView_CellEndEdit;
-            dataGridView.CellContentClick += dataGridView_CellContentClick;
-            dataGridView.RowPrePaint += DataGridView_RowPrePaint;
-
             SetupDataGridView();
             LoadBookings();
         }
@@ -68,7 +59,7 @@ namespace Client.Forms
             dataGridView.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Expiry Year", DataPropertyName = "ExpiryYear", ReadOnly = true });
 
             var deleteBtn = new DataGridViewButtonColumn();
-            deleteBtn.Name = "colDelete";
+            deleteBtn.Name = "Option";
             deleteBtn.Text = "Delete";
             deleteBtn.UseColumnTextForButtonValue = true;
             dataGridView.Columns.Add(deleteBtn);
@@ -86,7 +77,7 @@ namespace Client.Forms
             }
             catch (Exception ex)
             {
-                MessageBox.Show("אירעה שגיאה בטעינת ההזמנות:\n" + ex.Message, "שגיאה", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("An error occurred while loading bookings:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -131,7 +122,7 @@ namespace Client.Forms
             {
                 // The booking is already sent to the server from BookingForm, no need for api.Create!
                 LoadBookings();
-                MessageBox.Show("ההזמנה נוספה בהצלחה!", "הצלחה", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Booking added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
@@ -148,11 +139,11 @@ namespace Client.Forms
                 try
                 {
                     api.Update(row);
-                    MessageBox.Show("ההזמנה עודכנה בהצלחה!", "עדכון", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Booking updated successfully!", "Update", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("אירעה שגיאה בעת עדכון: " + ex.Message, "שגיאה", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("An error occurred while updating: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -169,18 +160,18 @@ namespace Client.Forms
                 var row = dataGridView.Rows[e.RowIndex].DataBoundItem as Booking;
                 if (row != null)
                 {
-                    var confirm = MessageBox.Show("האם למחוק את ההזמנה?", "מחיקה", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                    var confirm = MessageBox.Show("Are you sure you want to delete this booking?", "Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
                     if (confirm == DialogResult.Yes)
                     {
                         try
                         {
                             api.Delete(row.Id);
                             LoadBookings();
-                            MessageBox.Show("ההזמנה נמחקה בהצלחה.", "מחיקה", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            MessageBox.Show("Booking deleted successfully.", "Delete", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         }
                         catch (Exception ex)
                         {
-                            MessageBox.Show("אירעה שגיאה בעת מחיקה: " + ex.Message, "שגיאה", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            MessageBox.Show("An error occurred while deleting: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                     }
                 }
