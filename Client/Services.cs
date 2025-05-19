@@ -1,93 +1,117 @@
 ﻿using Common;
 using System;
+using System.IO;
 using System.Text;
 using Common.Entities;
 using Common.Messages;
 using Newtonsoft.Json;
 using System.Net.Sockets;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 
 namespace Client
 {
     /// <summary>
-    /// Provides methods to interact with the booking server API over TCP.
+    /// Provides client-side services for communicating with the hotel booking server,
+    /// including secure connection establishment, booking CRUD operations, and encryption utilities.
     /// </summary>
-    internal class BookingApi
+    public class Services : IDisposable
     {
-        private readonly int _port = Params.GetPort();
+        /// <summary>
+        /// The server host address.
+        /// </summary>
         private readonly string _host = Params.GetServerAddress();
 
         /// <summary>
-        /// Establishes a TCP connection to the booking server.
+        /// The server port number.
         /// </summary>
-        /// <returns>A connected <see cref="TcpClient"/> instance.</returns>
-        private TcpClient Connect()
+        private readonly int _port = Params.GetPort();
+
+        /// <summary>
+        /// The TCP client used for communication.
+        /// </summary>
+        private TcpClient client;
+
+        /// <summary>
+        /// The network stream for data transmission.
+        /// </summary>
+        private NetworkStream stream;
+
+        /// <summary>
+        /// The AES encryption key.
+        /// </summary>
+        private byte[] aesKey;
+
+        /// <summary>
+        /// The AES initialization vector.
+        /// </summary>
+        private byte[] aesIV;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Services"/> class and establishes a secure connection.
+        /// </summary>
+        public Services()
         {
-            var client = new TcpClient();
-            client.Connect(_host, _port);
-            return client;
+            SecureConnect();
         }
 
         /// <summary>
-        /// Serializes and sends a request object to the server via the specified stream.
+        /// Establishes a secure connection to the server using RSA for key exchange and AES for encryption.
         /// </summary>
-        /// <param name="stream">The network stream to write to.</param>
-        /// <param name="req">The request object to send.</param>
-        private void WriteRequest(NetworkStream stream, object req)
+        private void SecureConnect()
         {
-            var json = JsonConvert.SerializeObject(req);
-            var payload = Encoding.UTF8.GetBytes(json);
-            var length = BitConverter.GetBytes(payload.Length);
-            stream.Write(length, 0, 4);
-            stream.Write(payload, 0, payload.Length);
+            client = new TcpClient(_host, _port);
+            stream = client.GetStream();
+
+            // 1. Handshake: get public key
+            WriteString("getpublickey");
+            string publicKeyXml = ReadString();
+
+            // 2. Generate AES key and IV
+            using var aes = Aes.Create();
+            aes.GenerateKey();
+            aes.GenerateIV();
+            aesKey = aes.Key;
+            aesIV = aes.IV;
+
+            // 3. Send encrypted AES key
+            using var rsa = new RSACryptoServiceProvider();
+            rsa.FromXmlString(publicKeyXml);
+            byte[] encryptedAesKey = rsa.Encrypt(aesKey, false);
+            WriteString(Convert.ToBase64String(encryptedAesKey));
+
+            // 4. Send IV
+            WriteString(Convert.ToBase64String(aesIV));
         }
 
-        /// <summary>
-        /// Reads a JSON response from the server via the specified stream.
-        /// </summary>
-        /// <param name="stream">The network stream to read from.</param>
-        /// <returns>The response JSON string.</returns>
-        private string ReadResponseJson(NetworkStream stream)
-        {
-            var lenBuf = new byte[4];
-            FillBuffer(stream, lenBuf);
-            int respLen = BitConverter.ToInt32(lenBuf, 0);
-
-            var respBuf = new byte[respLen];
-            FillBuffer(stream, respBuf);
-
-            return Encoding.UTF8.GetString(respBuf);
-        }
+        // ------- API Functions: ---------
 
         /// <summary>
-        /// Reads the specified number of bytes from the stream into the buffer.
+        /// Sends a request to create a new booking on the server.
         /// </summary>
-        /// <param name="stream">The network stream to read from.</param>
-        /// <param name="buffer">The buffer to fill.</param>
-        /// <exception cref="Exception">Thrown if the connection is closed by the server.</exception>
-        private void FillBuffer(NetworkStream stream, byte[] buffer)
+        /// <param name="booking">The booking to create.</param>
+        /// <exception cref="Exception">Thrown if the server returns an error status.</exception>
+        public void CreateBooking(Booking booking)
         {
-            int read = 0;
-            while (read < buffer.Length)
-            {
-                int n = stream.Read(buffer, read, buffer.Length - read);
-                if (n == 0) throw new Exception("Connection closed by server");
-                read += n;
-            }
+            var req = new RequestMessage { Command = "create", Booking = booking };
+            WriteEncrypted(req);
+
+            var respJson = ReadEncrypted();
+            var resp = JsonConvert.DeserializeObject<ResponseMessage<Booking>>(respJson);
+
+            if (resp.Status != 201)
+                throw new Exception("Server error: " + resp.Data);
         }
 
         /// <summary>
         /// Retrieves all bookings from the server.
         /// </summary>
-        /// <returns>A list of <see cref="Booking"/> objects.</returns>
+        /// <returns>A list of all bookings.</returns>
         /// <exception cref="Exception">Thrown if the server returns an error status.</exception>
         public List<Booking> GetAll()
         {
-            using var client = Connect();
-            using var stream = client.GetStream();
-
-            WriteRequest(stream, new RequestMessage { Command = "getall" });
-            var respJson = ReadResponseJson(stream);
+            WriteEncrypted(new RequestMessage { Command = "getall" });
+            string respJson = ReadEncrypted();
             var resp = JsonConvert.DeserializeObject<ResponseMessage<List<Booking>>>(respJson);
             if (resp.Status != 0)
                 throw new Exception("Server error: " + resp.Data);
@@ -95,73 +119,130 @@ namespace Client
         }
 
         /// <summary>
-        /// Retrieves a booking by its identifier.
-        /// </summary>
-        /// <param name="id">The booking identifier.</param>
-        /// <returns>The <see cref="Booking"/> if found; otherwise, null.</returns>
-        /// <exception cref="Exception">Thrown if the server returns an error status.</exception>
-        public Booking? Get(int id)
-        {
-            using var client = Connect();
-            using var stream = client.GetStream();
-
-            WriteRequest(stream, new RequestMessage { Command = "get", Id = id });
-            var respJson = ReadResponseJson(stream);
-            var resp = JsonConvert.DeserializeObject<ResponseMessage<Booking>>(respJson);
-            if (resp.Status != 0)
-                throw new Exception("Server error: " + resp.Data);
-            return resp.Data;
-        }
-
-        /// <summary>
-        /// Creates a new booking on the server.
-        /// </summary>
-        /// <param name="b">The <see cref="Booking"/> to create.</param>
-        /// <exception cref="Exception">Thrown if the server does not return a 201 status.</exception>
-        public void Create(Booking b)
-        {
-            using var client = Connect();
-            using var stream = client.GetStream();
-
-            WriteRequest(stream, new RequestMessage { Command = "create", Booking = b });
-            var respJson = ReadResponseJson(stream);
-            var resp = JsonConvert.DeserializeObject<ResponseMessage<Booking>>(respJson);
-            if (resp.Status != 201)
-                throw new Exception("Create failed: " + resp.Data);
-        }
-
-        /// <summary>
         /// Updates an existing booking on the server.
         /// </summary>
-        /// <param name="b">The <see cref="Booking"/> to update.</param>
-        /// <exception cref="Exception">Thrown if the server does not return a 200 status.</exception>
+        /// <param name="b">The booking to update.</param>
+        /// <exception cref="Exception">Thrown if the update fails.</exception>
         public void Update(Booking b)
         {
-            using var client = Connect();
-            using var stream = client.GetStream();
-
-            WriteRequest(stream, new RequestMessage { Command = "update", Booking = b });
-            var respJson = ReadResponseJson(stream);
+            WriteEncrypted(new RequestMessage { Command = "update", Booking = b });
+            string respJson = ReadEncrypted();
             var resp = JsonConvert.DeserializeObject<ResponseMessage<Booking>>(respJson);
             if (resp.Status != 200)
                 throw new Exception("Update failed: " + resp.Data);
         }
 
         /// <summary>
-        /// Deletes a booking by its identifier.
+        /// Deletes a booking from the server by its identifier.
         /// </summary>
         /// <param name="id">The booking identifier.</param>
-        /// <exception cref="Exception">Thrown if the server does not return a 204 status.</exception>
+        /// <exception cref="Exception">Thrown if the delete operation fails.</exception>
         public void Delete(int id)
         {
-            using var client = Connect();
-            using var stream = client.GetStream();
-
-            WriteRequest(stream, new RequestMessage { Command = "delete", Id = id });
-            var respJson = ReadResponseJson(stream);
+            WriteEncrypted(new RequestMessage { Command = "delete", Id = id });
+            string respJson = ReadEncrypted();
             var resp = JsonConvert.DeserializeObject<ResponseMessage<string>>(respJson);
             if (resp.Status != 204)
                 throw new Exception("Delete failed: " + resp.Data);
+        }
+
+        // ------ Encryption and Decryption --------
+
+        /// <summary>
+        /// Serializes and encrypts a request object, then sends it to the server.
+        /// </summary>
+        /// <param name="req">The request object to send.</param>
+        private void WriteEncrypted(object req)
+        {
+            string json = JsonConvert.SerializeObject(req);
+            byte[] enc = EncryptAes(json, aesKey, aesIV);
+            WriteString(Convert.ToBase64String(enc));
+        }
+
+        /// <summary>
+        /// Reads and decrypts an encrypted response from the server.
+        /// </summary>
+        /// <returns>The decrypted response string.</returns>
+        private string ReadEncrypted()
+        {
+            string encB64 = ReadString();
+            byte[] enc = Convert.FromBase64String(encB64);
+            return DecryptAes(enc, aesKey, aesIV);
+        }
+
+        /// <summary>
+        /// Writes a UTF-8 encoded string to the network stream, prefixed with its length.
+        /// </summary>
+        /// <param name="str">The string to write.</param>
+        private void WriteString(string str)
+        {
+            var buf = Encoding.UTF8.GetBytes(str);
+            var len = BitConverter.GetBytes(buf.Length);
+            stream.Write(len, 0, 4);
+            stream.Write(buf, 0, buf.Length);
+        }
+
+        /// <summary>
+        /// Reads a UTF-8 encoded string from the network stream, using the prefixed length.
+        /// </summary>
+        /// <returns>The string read from the stream.</returns>
+        private string ReadString()
+        {
+            var lenBuf = new byte[4];
+            stream.Read(lenBuf, 0, 4);
+            int len = BitConverter.ToInt32(lenBuf, 0);
+
+            var buf = new byte[len];
+            int read = 0;
+            while (read < len) read += stream.Read(buf, read, len - read);
+            return Encoding.UTF8.GetString(buf);
+        }
+
+        /// <summary>
+        /// Encrypts a plain text string using AES encryption.
+        /// </summary>
+        /// <param name="plain">The plain text to encrypt.</param>
+        /// <param name="key">The AES key.</param>
+        /// <param name="iv">The AES initialization vector.</param>
+        /// <returns>The encrypted data as a byte array.</returns>
+        private byte[] EncryptAes(string plain, byte[] key, byte[] iv)
+        {
+            using var aes = Aes.Create();
+            aes.Key = key; aes.IV = iv;
+            using var encryptor = aes.CreateEncryptor();
+            using var ms = new MemoryStream();
+            using var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
+            using var sw = new StreamWriter(cs);
+            sw.Write(plain);
+            sw.Close();
+            return ms.ToArray();
+        }
+
+        /// <summary>
+        /// Decrypts AES-encrypted data to a plain text string.
+        /// </summary>
+        /// <param name="data">The encrypted data.</param>
+        /// <param name="key">The AES key.</param>
+        /// <param name="iv">The AES initialization vector.</param>
+        /// <returns>The decrypted plain text string.</returns>
+        private string DecryptAes(byte[] data, byte[] key, byte[] iv)
+        {
+            using var aes = Aes.Create();
+            aes.Key = key; aes.IV = iv;
+            using var decryptor = aes.CreateDecryptor();
+            using var ms = new MemoryStream(data);
+            using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+            using var sr = new StreamReader(cs);
+            return sr.ReadToEnd();
+        }
+
+        /// <summary>
+        /// Releases all resources used by the <see cref="Services"/> instance.
+        /// </summary>
+        public void Dispose()
+        {
+            stream?.Dispose();
+            client?.Close();
         }
     }
 }

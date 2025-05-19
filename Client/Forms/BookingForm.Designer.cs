@@ -146,7 +146,7 @@ namespace Client
             0,
             0,
             0});
-            this.numGuests.ValueChanged += new System.EventHandler(this.numGuests_ValueChanged);
+            this.numGuests.ValueChanged += new System.EventHandler(this.UpdateSummary);
             // 
             // txtCardNumber
             // 
@@ -156,6 +156,7 @@ namespace Client
             this.txtCardNumber.Size = new System.Drawing.Size(175, 20);
             this.txtCardNumber.TabIndex = 32;
             this.txtCardNumber.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.txtCardNumber.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtCardNumber_KeyPress);
             // 
             // label_ExpiryMonth
             // 
@@ -205,7 +206,7 @@ namespace Client
             this.cmbRoomType.Name = "cmbRoomType";
             this.cmbRoomType.Size = new System.Drawing.Size(175, 21);
             this.cmbRoomType.TabIndex = 30;
-            this.cmbRoomType.TextChanged += new System.EventHandler(this.cmbRoomType_TextChanged);
+            this.cmbRoomType.TextChanged += new System.EventHandler(this.UpdateSummary);
             // 
             // dtpCheckOut
             // 
@@ -214,7 +215,7 @@ namespace Client
             this.dtpCheckOut.Name = "dtpCheckOut";
             this.dtpCheckOut.Size = new System.Drawing.Size(175, 20);
             this.dtpCheckOut.TabIndex = 29;
-            this.dtpCheckOut.ValueChanged += new System.EventHandler(this.dtpCheckOut_ValueChanged);
+            this.dtpCheckOut.ValueChanged += new System.EventHandler(this.UpdateSummary);
             // 
             // label3
             // 
@@ -235,7 +236,7 @@ namespace Client
             this.dtpCheckIn.Name = "dtpCheckIn";
             this.dtpCheckIn.Size = new System.Drawing.Size(175, 20);
             this.dtpCheckIn.TabIndex = 28;
-            this.dtpCheckIn.ValueChanged += new System.EventHandler(this.dtpCheckIn_ValueChanged_1);
+            this.dtpCheckIn.ValueChanged += new System.EventHandler(this.UpdateSummary);
             // 
             // label2
             // 
@@ -282,6 +283,7 @@ namespace Client
             this.txtEmail.TabIndex = 27;
             this.txtEmail.Text = "example@example.com";
             this.txtEmail.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.txtEmail.Leave += new System.EventHandler(this.txtEmail_Leave);
             // 
             // txtExpiryMonth
             // 
@@ -311,7 +313,7 @@ namespace Client
             this.txtGuestName.Size = new System.Drawing.Size(175, 20);
             this.txtGuestName.TabIndex = 26;
             this.txtGuestName.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.txtGuestName.TextChanged += new System.EventHandler(this.txtGuestName_TextChanged);
+            this.txtGuestName.TextChanged += new System.EventHandler(this.UpdateSummary);
             // 
             // accentBar
             // 

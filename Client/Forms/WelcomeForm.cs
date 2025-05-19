@@ -13,6 +13,11 @@ namespace Client.Forms
     public partial class WelcomeForm : Form
     {
         /// <summary>
+        /// API service for booking operations.
+        /// </summary>
+        private Services api = new Services();
+
+        /// <summary>
         /// The current index of the hotel image being displayed.
         /// </summary>
         private int currentImage = 0;
@@ -121,9 +126,10 @@ namespace Client.Forms
         /// <param name="e">The event arguments.</param>
         private void btnNewBooking_Click(object sender, EventArgs e)
         {
-            var bookingForm = new BookingForm();
-            bookingForm.ShowDialog();
-            this.Hide();
+            using (var bookingForm = new BookingForm(api))
+            {
+                bookingForm.ShowDialog(this);
+            }
         }
 
         /// <summary>
@@ -133,17 +139,17 @@ namespace Client.Forms
         /// <param name="e">The event arguments.</param>
         private void btnAdminLogin_Click(object sender, EventArgs e)
         {
-            var loginForm = new AdminForm();
-            loginForm.FormClosed += (s, ev) =>
+            using (var loginForm = new LoginForm(api))
             {
-                if (loginForm.DialogResult == DialogResult.OK)
+                // Show the login form as a dialog. If login is successful (DialogResult.OK), open the admin form.
+                if (loginForm.ShowDialog(this) == DialogResult.OK)
                 {
-                    var adminForm = new AdminForm();
-                    adminForm.Show();
-                    this.Hide();
+                    using (var adminForm = new AdminForm(api))
+                    {
+                        adminForm.ShowDialog(this);
+                    }
                 }
-            };
-            loginForm.Show();
+            }
         }
 
         /// <summary>

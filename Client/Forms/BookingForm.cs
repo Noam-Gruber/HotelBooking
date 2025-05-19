@@ -1,50 +1,40 @@
-﻿using Common;
-using System;
-using System.IO;
-using System.Text;
-using System.Drawing;
+﻿using System;
 using Common.Entities;
-using Common.Messages;
-using Newtonsoft.Json;
-using System.Net.Sockets;
 using System.Windows.Forms;
 
 namespace Client
 {
     /// <summary>
-    /// Form for creating a new booking or editing an existing booking.
+    /// Represents the form for creating a new booking or editing an existing booking.
     /// </summary>
     public partial class BookingForm : Form
     {
+        /// <summary>
+        /// The API service used for booking operations.
+        /// </summary>
+        private readonly Services api;
+
         /// <summary>
         /// Gets the newly created booking after a successful save.
         /// </summary>
         public Booking NewBooking { get; private set; }
 
         /// <summary>
-        /// The server host address.
-        /// </summary>
-        private readonly string SERVER_HOST = Params.GetServerAddress();
-
-        /// <summary>
-        /// The server port number.
-        /// </summary>
-        private readonly int SERVER_PORT = Params.GetPort();
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="BookingForm"/> class.
         /// </summary>
-        public BookingForm()
+        /// <param name="api">The API service for booking operations.</param>
+        public BookingForm(Services api)
         {
             InitializeComponent();
+            this.api = api;
             cmbRoomType.SelectedIndex = 0;
             dtpCheckIn.Value = DateTime.Today;
             dtpCheckOut.Value = DateTime.Today.AddDays(2);
+            UpdateSummary();
         }
 
-
         /// <summary>
-        /// Handles the Save button click event. Validates input, sends the booking to the server, and processes the response.
+        /// Handles the Save button click event. Validates input and creates a new booking.
         /// </summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event arguments.</param>
@@ -61,46 +51,11 @@ namespace Client
             try
             {
                 var booking = BuildBookingFromUi();
-
-                // Send the booking request to the server (short connection for each operation)
-                using var client = new TcpClient();
-                client.Connect(SERVER_HOST, SERVER_PORT);
-                using var stream = client.GetStream();
-
-                var request = new RequestMessage
-                {
-                    Command = "create",
-                    Booking = booking
-                };
-
-                var json = JsonConvert.SerializeObject(request);
-                var payload = Encoding.UTF8.GetBytes(json);
-                var length = BitConverter.GetBytes(payload.Length);
-                stream.Write(length, 0, 4);
-                stream.Write(payload, 0, payload.Length);
-
-                // Receive the response
-                var lenBuf = new byte[4];
-                FillBuffer(stream, lenBuf);
-                int respLen = BitConverter.ToInt32(lenBuf, 0);
-
-                var respBuf = new byte[respLen];
-                FillBuffer(stream, respBuf);
-
-                var respJson = Encoding.UTF8.GetString(respBuf);
-                var resp = JsonConvert.DeserializeObject<ResponseMessage<Booking>>(respJson);
-
-                if (resp.Status == 201)
-                {
-                    NewBooking = resp.Data;
-                    MessageBox.Show("Booking completed successfully! (ID=" + NewBooking.Id + ")", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    this.DialogResult = DialogResult.OK;
-                    this.Close();
-                }
-                else
-                {
-                    MessageBox.Show("An error occurred: " + resp.Data, "Server Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                api.CreateBooking(booking);
+                MessageBox.Show("Booking completed successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                this.NewBooking = booking;
+                this.DialogResult = DialogResult.OK;
+                this.Close();
             }
             catch (Exception ex)
             {
@@ -109,25 +64,9 @@ namespace Client
         }
 
         /// <summary>
-        /// Reads the specified number of bytes from the network stream into the buffer.
+        /// Builds a <see cref="Booking"/> object from the current UI input values.
         /// </summary>
-        /// <param name="stream">The network stream to read from.</param>
-        /// <param name="buffer">The buffer to fill with data.</param>
-        private void FillBuffer(NetworkStream stream, byte[] buffer)
-        {
-            int read = 0;
-            while (read < buffer.Length)
-            {
-                int n = stream.Read(buffer, read, buffer.Length - read);
-                if (n == 0) throw new Exception("Connection closed by server");
-                read += n;
-            }
-        }
-
-        /// <summary>
-        /// Builds a <see cref="Booking"/> object from the current UI field values.
-        /// </summary>
-        /// <returns>A <see cref="Booking"/> object populated from the form fields.</returns>
+        /// <returns>A <see cref="Booking"/> object populated with form data.</returns>
         private Booking BuildBookingFromUi() =>
             new Booking
             {
@@ -143,24 +82,16 @@ namespace Client
             };
 
         /// <summary>
-        /// Populates the UI fields from the given <see cref="Booking"/> object.
+        /// Updates the booking summary label with the current form values.
         /// </summary>
-        /// <param name="b">The booking to populate the UI from.</param>
-        public void PopulateUiFromBooking(Booking b)
+        private void UpdateSummary()
         {
-            txtGuestName.Text = b.GuestName;
-            txtEmail.Text = b.Email;
-            dtpCheckIn.Value = b.CheckInDate;
-            dtpCheckOut.Value = b.CheckOutDate;
-            cmbRoomType.SelectedItem = b.RoomType;
-            numGuests.Value = b.NumberOfGuests;
-            txtCardNumber.Text = b.CardNumber;
-            txtExpiryMonth.Text = b.ExpiryMonth.ToString();
-            txtExpiryYear.Text = b.ExpiryYear.ToString();
+            lblSummary.Text = $"Booking: {numGuests.Value} guests, {cmbRoomType.SelectedItem}, " +
+                              $"{dtpCheckIn.Value:dd/MM/yyyy} - {dtpCheckOut.Value:dd/MM/yyyy}";
         }
 
         /// <summary>
-        /// Validates the email address when the email textbox loses focus.
+        /// Handles the Leave event for the email textbox. Validates the email format.
         /// </summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event arguments.</param>
@@ -175,20 +106,7 @@ namespace Client
         }
 
         /// <summary>
-        /// Validates the check-in date when the value changes.
-        /// </summary>
-        /// <param name="sender">The event sender.</param>
-        /// <param name="e">The event arguments.</param>
-        private void dtpCheckIn_ValueChanged(object sender, EventArgs e)
-        {
-            if (dtpCheckIn.Value.Date > DateTime.Now.Date)
-            {
-                MessageBox.Show("Check-in date cannot be in the future.");
-            }
-        }
-
-        /// <summary>
-        /// Restricts the card number textbox to digits only.
+        /// Handles the KeyPress event for the card number textbox. Allows only digits and backspace.
         /// </summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The key press event arguments.</param>
@@ -199,32 +117,13 @@ namespace Client
                 e.Handled = true;
             }
         }
-        private void UpdateSummary()
-        {
-            lblSummary.Text = $"Booking: {numGuests.Value} guests, {cmbRoomType.SelectedItem}, " +
-                              $"{dtpCheckIn.Value:dd/MM/yyyy} - {dtpCheckOut.Value:dd/MM/yyyy}";
-        }
-        private void numGuests_ValueChanged(object sender, EventArgs e)
-        {
-            UpdateSummary();
-        }
 
-        private void cmbRoomType_TextChanged(object sender, EventArgs e)
-        {
-            UpdateSummary();
-        }
-
-        private void txtGuestName_TextChanged(object sender, EventArgs e)
-        {
-            UpdateSummary();
-        }
-
-        private void dtpCheckIn_ValueChanged_1(object sender, EventArgs e)
-        {
-            UpdateSummary();
-        }
-
-        private void dtpCheckOut_ValueChanged(object sender, EventArgs e)
+        /// <summary>
+        /// Handles events that require updating the booking summary label.
+        /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event arguments.</param>
+        private void UpdateSummary(object sender, EventArgs e)
         {
             UpdateSummary();
         }

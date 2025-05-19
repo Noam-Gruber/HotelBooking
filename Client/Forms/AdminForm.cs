@@ -12,12 +12,12 @@ namespace Client.Forms
     public partial class AdminForm : Form
     {
         /// <summary>
-        /// API for booking operations.
+        /// The API service used for booking operations.
         /// </summary>
-        private BookingApi api = new BookingApi();
+        private readonly Services api;
 
         /// <summary>
-        /// Binding source for the DataGridView.
+        /// The binding source for the DataGridView.
         /// </summary>
         private BindingSource bindingSource = new BindingSource();
 
@@ -29,9 +29,11 @@ namespace Client.Forms
         /// <summary>
         /// Initializes a new instance of the <see cref="AdminForm"/> class.
         /// </summary>
-        public AdminForm()
+        /// <param name="api">The API service for booking operations.</param>
+        public AdminForm(Services api)
         {
             InitializeComponent();
+            this.api = api;
             SetupDataGridView();
             LoadBookings();
         }
@@ -59,10 +61,14 @@ namespace Client.Forms
             dataGridView.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Expiry Year", DataPropertyName = "ExpiryYear", ReadOnly = true });
 
             var deleteBtn = new DataGridViewButtonColumn();
-            deleteBtn.Name = "Option";
+            deleteBtn.Name = "colDelete";
             deleteBtn.Text = "Delete";
             deleteBtn.UseColumnTextForButtonValue = true;
             dataGridView.Columns.Add(deleteBtn);
+
+            dataGridView.CellContentClick += dataGridView_CellContentClick;
+            dataGridView.CellEndEdit += dataGridView_CellEndEdit;
+            dataGridView.RowPrePaint += DataGridView_RowPrePaint;
         }
 
         /// <summary>
@@ -117,12 +123,13 @@ namespace Client.Forms
         /// <param name="e">The event arguments.</param>
         private void btnAdd_Click(object sender, EventArgs e)
         {
-            var addForm = new BookingForm();
-            if (addForm.ShowDialog() == DialogResult.OK)
+            using (var bookingForm = new BookingForm(api))
             {
-                // The booking is already sent to the server from BookingForm, no need for api.Create!
-                LoadBookings();
-                MessageBox.Show("Booking added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                if (bookingForm.ShowDialog() == DialogResult.OK)
+                {
+                    LoadBookings();
+                    MessageBox.Show("Booking added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
             }
         }
 

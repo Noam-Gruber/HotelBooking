@@ -1,35 +1,42 @@
 ﻿using System;
+using System.IO;
 using System.Net;
+using System.Linq;
 using Server.Data;
 using System.Text;
-using System.Linq;
-using Common.Entities;
 using Common.Messages;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 
 namespace Server
 {
     /// <summary>
-    /// Entry point for the server application. Handles incoming TCP client connections and processes booking requests.
+    /// Entry point for the server application. Handles incoming TCP connections,
+    /// performs secure handshake, and processes booking-related commands.
     /// </summary>
     class Program
     {
         /// <summary>
-        /// The TCP port on which the server listens for incoming connections.
+        /// The port number the server listens on.
         /// </summary>
-        private static readonly int port = Common.Params.GetPort();
+        private static readonly int _port = Common.Params.GetPort();
 
         /// <summary>
-        /// Main entry point. Starts the TCP listener and handles incoming client connections.
+        /// The RSA key pair used for secure key exchange.
+        /// </summary>
+        private static RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(2048);
+
+        /// <summary>
+        /// Main entry point. Starts the TCP server and listens for incoming client connections.
         /// </summary>
         /// <param name="args">Command-line arguments.</param>
         static void Main(string[] args)
         {
-            var listener = new TcpListener(IPAddress.Loopback, port);
+            var listener = new TcpListener(IPAddress.Loopback, _port);
             listener.Start();
-            Console.WriteLine($"TCP server listening on port {port}...");
+            Console.WriteLine($"TCP server listening on port {_port}...");
 
             while (true)
             {
@@ -39,7 +46,7 @@ namespace Server
         }
 
         /// <summary>
-        /// Handles a single client connection, processes the request, and sends a response.
+        /// Handles an individual client connection, performing handshake, decryption, and command processing.
         /// </summary>
         /// <param name="client">The connected TCP client.</param>
         static void HandleClient(TcpClient client)
@@ -49,129 +56,98 @@ namespace Server
                 using (client)
                 using (var stream = client.GetStream())
                 {
-                    var req = ReadRequest(stream);
+                    // Step 1: Handshake - send public key
+                    string handshakeCmd = ReadString(stream);
+                    if (handshakeCmd != "getpublickey")
+                        throw new Exception("Expected handshake getpublickey!");
 
-                    try
+                    string publicKey = rsa.ToXmlString(false); // public only
+                    WriteString(stream, publicKey);
+
+                    // Step 2: Receive encrypted AES key (base64), and decrypt it
+                    string encryptedAesKeyB64 = ReadString(stream);
+                    byte[] encryptedAesKey = Convert.FromBase64String(encryptedAesKeyB64);
+                    byte[] aesKey = rsa.Decrypt(encryptedAesKey, false);
+
+                    // Step 3: Receive IV (base64)
+                    string ivB64 = ReadString(stream);
+                    byte[] aesIV = Convert.FromBase64String(ivB64);
+
+                    // Now ready to receive/send everything via AES
+                    while (true)
                     {
+                        // Step 4: Receive encrypted request (base64)
+                        string encReqB64 = ReadString(stream);
+                        byte[] encReq = Convert.FromBase64String(encReqB64);
+                        string reqJson = DecryptAes(encReq, aesKey, aesIV);
+
+                        var req = JsonConvert.DeserializeObject<RequestMessage>(reqJson);
+
+                        // Step 5: Process the request
+                        object result = null;
+                        int statusCode = 0;
+
                         using (var db = new ApplicationDbContext())
                         {
                             switch (req.Command?.ToLowerInvariant())
                             {
                                 case "getall":
-                                    var list = db.Bookings.OrderBy(b => b.CheckInDate).ToList();
-                                    WriteResponse(stream, new ResponseMessage<System.Collections.Generic.List<Booking>>
-                                    {
-                                        Status = 0,
-                                        Data = list
-                                    });
+                                    result = db.Bookings.OrderBy(b => b.CheckInDate).ToList();
+                                    statusCode = 0;
                                     break;
-
                                 case "get":
                                     var item = db.Bookings.Find(req.Id);
-                                    if (item == null)
-                                    {
-                                        WriteResponse(stream, new ResponseMessage<string>
-                                        {
-                                            Status = 1,
-                                            Data = "Booking not found"
-                                        });
-                                    }
-                                    else
-                                    {
-                                        WriteResponse(stream, new ResponseMessage<Booking>
-                                        {
-                                            Status = 0,
-                                            Data = item
-                                        });
-                                    }
+                                    if (item == null) statusCode = 1;
+                                    else result = item;
                                     break;
-
                                 case "create":
-                                    try
-                                    {
-                                        db.Bookings.Add(req.Booking);
-                                        db.SaveChanges();
-                                        WriteResponse(stream, new ResponseMessage<Booking>
-                                        {
-                                            Status = 201,
-                                            Data = req.Booking
-                                        });
-                                    }
-                                    catch (System.Data.Entity.Infrastructure.DbUpdateException ex)
-                                    {
-                                        var baseErr = ex.GetBaseException();
-                                        Console.ForegroundColor = ConsoleColor.Red;
-                                        Console.WriteLine($"[EF] {baseErr.Message}");
-                                        Console.ResetColor();
-                                        WriteResponse(stream, new ResponseMessage<string>
-                                        {
-                                            Status = 2,
-                                            Data = baseErr.Message
-                                        });
-                                    }
+                                    db.Bookings.Add(req.Booking);
+                                    db.SaveChanges();
+                                    result = req.Booking;
+                                    statusCode = 201;
                                     break;
-
                                 case "update":
                                     var updateItem = db.Bookings.Find(req.Booking.Id);
                                     if (updateItem != null)
                                     {
                                         updateItem.GuestName = req.Booking.GuestName;
                                         db.SaveChanges();
-                                        WriteResponse(stream, new ResponseMessage<Booking>
-                                        {
-                                            Status = 200,
-                                            Data = updateItem
-                                        });
+                                        statusCode = 200;
+                                        result = updateItem;
                                     }
                                     else
                                     {
-                                        WriteResponse(stream, new ResponseMessage<string>
-                                        {
-                                            Status = 1,
-                                            Data = "Booking not found for update"
-                                        });
+                                        statusCode = 1;
+                                        result = "Not found for update";
                                     }
                                     break;
-
                                 case "delete":
                                     var deleteItem = db.Bookings.Find(req.Id);
                                     if (deleteItem != null)
                                     {
                                         db.Bookings.Remove(deleteItem);
                                         db.SaveChanges();
-                                        WriteResponse(stream, new ResponseMessage<string>
-                                        {
-                                            Status = 204,
-                                            Data = "Booking deleted"
-                                        });
+                                        statusCode = 204;
+                                        result = "Deleted";
                                     }
                                     else
                                     {
-                                        WriteResponse(stream, new ResponseMessage<string>
-                                        {
-                                            Status = 1,
-                                            Data = "Booking not found for deletion"
-                                        });
+                                        statusCode = 1;
+                                        result = "Not found for deletion";
                                     }
                                     break;
-
                                 default:
-                                    WriteResponse(stream, new ResponseMessage<string>
-                                    {
-                                        Status = 2,
-                                        Data = $"Unknown command '{req.Command}'"
-                                    });
+                                    statusCode = 2;
+                                    result = $"Unknown command '{req.Command}'";
                                     break;
                             }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        WriteResponse(stream, new ResponseMessage<string>
-                        {
-                            Status = 2,
-                            Data = ex.Message
-                        });
+
+                        // Step 6: Send encrypted response
+                        var respObj = new { Status = statusCode, Data = result };
+                        string respJson = JsonConvert.SerializeObject(respObj);
+                        byte[] encResp = EncryptAes(respJson, aesKey, aesIV);
+                        WriteString(stream, Convert.ToBase64String(encResp));
                     }
                 }
             }
@@ -179,18 +155,29 @@ namespace Server
             {
                 Console.WriteLine($"Client error: {ex.Message}");
             }
-            finally
-            {
-                Console.WriteLine("Client disconnected.");
-            }
+        }
+
+        // ===================== Tools =====================
+
+        /// <summary>
+        /// Writes a UTF-8 encoded string to the network stream, prefixed with its length.
+        /// </summary>
+        /// <param name="s">The network stream.</param>
+        /// <param name="str">The string to write.</param>
+        static void WriteString(NetworkStream s, string str)
+        {
+            var buf = Encoding.UTF8.GetBytes(str);
+            var len = BitConverter.GetBytes(buf.Length);
+            s.Write(len, 0, 4);
+            s.Write(buf, 0, buf.Length);
         }
 
         /// <summary>
-        /// Reads a request message from the network stream.
+        /// Reads a UTF-8 encoded string from the network stream, using the prefixed length.
         /// </summary>
-        /// <param name="s">The network stream to read from.</param>
-        /// <returns>The deserialized <see cref="RequestMessage"/> object.</returns>
-        private static RequestMessage ReadRequest(NetworkStream s)
+        /// <param name="s">The network stream.</param>
+        /// <returns>The string read from the stream.</returns>
+        static string ReadString(NetworkStream s)
         {
             var lenBuf = new byte[4];
             s.Read(lenBuf, 0, 4);
@@ -199,24 +186,45 @@ namespace Server
             var buf = new byte[len];
             int read = 0;
             while (read < len) read += s.Read(buf, read, len - read);
-
-            var json = Encoding.UTF8.GetString(buf);
-            return JsonConvert.DeserializeObject<RequestMessage>(json);
+            return Encoding.UTF8.GetString(buf);
         }
 
         /// <summary>
-        /// Serializes and writes a response message to the network stream.
+        /// Encrypts a plain text string using AES encryption.
         /// </summary>
-        /// <typeparam name="T">The type of the data in the response.</typeparam>
-        /// <param name="s">The network stream to write to.</param>
-        /// <param name="resp">The response message to send.</param>
-        private static void WriteResponse<T>(NetworkStream s, ResponseMessage<T> resp)
+        /// <param name="plain">The plain text to encrypt.</param>
+        /// <param name="key">The AES key.</param>
+        /// <param name="iv">The AES initialization vector.</param>
+        /// <returns>The encrypted data as a byte array.</returns>
+        static byte[] EncryptAes(string plain, byte[] key, byte[] iv)
         {
-            var json = JsonConvert.SerializeObject(resp);
-            var buf = Encoding.UTF8.GetBytes(json);
-            var len = BitConverter.GetBytes(buf.Length);
-            s.Write(len, 0, 4);
-            s.Write(buf, 0, buf.Length);
+            using var aes = Aes.Create();
+            aes.Key = key; aes.IV = iv;
+            using var encryptor = aes.CreateEncryptor();
+            using var ms = new MemoryStream();
+            using var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
+            using var sw = new StreamWriter(cs);
+            sw.Write(plain);
+            sw.Close();
+            return ms.ToArray();
+        }
+
+        /// <summary>
+        /// Decrypts AES-encrypted data to a plain text string.
+        /// </summary>
+        /// <param name="data">The encrypted data.</param>
+        /// <param name="key">The AES key.</param>
+        /// <param name="iv">The AES initialization vector.</param>
+        /// <returns>The decrypted plain text string.</returns>
+        static string DecryptAes(byte[] data, byte[] key, byte[] iv)
+        {
+            using var aes = Aes.Create();
+            aes.Key = key; aes.IV = iv;
+            using var decryptor = aes.CreateDecryptor();
+            using var ms = new MemoryStream(data);
+            using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+            using var sr = new StreamReader(cs);
+            return sr.ReadToEnd();
         }
     }
 }

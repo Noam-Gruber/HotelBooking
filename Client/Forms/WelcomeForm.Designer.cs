@@ -118,9 +118,9 @@
             this.lblQuote.ForeColor = System.Drawing.Color.DimGray;
             this.lblQuote.Location = new System.Drawing.Point(180, 350);
             this.lblQuote.Name = "lblQuote";
-            this.lblQuote.Size = new System.Drawing.Size(50, 20);
+            this.lblQuote.Size = new System.Drawing.Size(93, 20);
             this.lblQuote.TabIndex = 6;
-            this.lblQuote.Text = "label1";
+            this.lblQuote.Text = "--------------";
             this.lblQuote.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // accentBar
