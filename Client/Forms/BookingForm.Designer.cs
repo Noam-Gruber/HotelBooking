@@ -51,9 +51,7 @@ namespace Client
             this.label6 = new System.Windows.Forms.Label();
             this.txtId = new System.Windows.Forms.TextBox();
             this.label8 = new System.Windows.Forms.Label();
-            this.pictureBox = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.numGuests)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).BeginInit();
             this.SuspendLayout();
             // 
             // txtGuestName
@@ -242,13 +240,17 @@ namespace Client
             // 
             // btnSave
             // 
+            this.btnSave.BackColor = System.Drawing.Color.DeepSkyBlue;
+            this.btnSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnSave.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
+            this.btnSave.ForeColor = System.Drawing.Color.White;
             this.btnSave.Location = new System.Drawing.Point(20, 311);
             this.btnSave.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             this.btnSave.Name = "btnSave";
-            this.btnSave.Size = new System.Drawing.Size(266, 19);
+            this.btnSave.Size = new System.Drawing.Size(266, 38);
             this.btnSave.TabIndex = 21;
-            this.btnSave.Text = "Book";
-            this.btnSave.UseVisualStyleBackColor = true;
+            this.btnSave.Text = "🛎️ Book";
+            this.btnSave.UseVisualStyleBackColor = false;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
             // label6
@@ -280,22 +282,12 @@ namespace Client
             this.label8.TabIndex = 25;
             this.label8.Text = "Lookup ID 🔍:";
             // 
-            // pictureBox
-            // 
-            this.pictureBox.Location = new System.Drawing.Point(297, 40);
-            this.pictureBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
-            this.pictureBox.Name = "pictureBox";
-            this.pictureBox.Size = new System.Drawing.Size(201, 244);
-            this.pictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pictureBox.TabIndex = 26;
-            this.pictureBox.TabStop = false;
-            // 
             // BookingForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(521, 334);
-            this.Controls.Add(this.pictureBox);
+            this.BackColor = System.Drawing.Color.AliceBlue;
+            this.ClientSize = new System.Drawing.Size(297, 361);
             this.Controls.Add(this.label8);
             this.Controls.Add(this.txtId);
             this.Controls.Add(this.label6);
@@ -321,7 +313,6 @@ namespace Client
             this.Name = "BookingForm";
             this.Text = "HotelBookingHub Client";
             ((System.ComponentModel.ISupportInitialize)(this.numGuests)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -350,7 +341,6 @@ namespace Client
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.TextBox txtId;
         private System.Windows.Forms.Label label8;
-        private System.Windows.Forms.PictureBox pictureBox;
     }
 }
 

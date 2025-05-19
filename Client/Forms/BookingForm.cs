@@ -37,43 +37,16 @@ namespace Client
         private int currentImageIndex = 0;
 
         /// <summary>
-        /// Array of hotel image file paths for the slideshow.
-        /// </summary>
-        private string[] hotelImages = new string[]
-        {
-                Path.Combine(Directory.GetParent(Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName).FullName).FullName, @"Images\hotel1.png"),
-                Path.Combine(Directory.GetParent(Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName).FullName).FullName, @"Images\hotel2.png"),
-                Path.Combine(Directory.GetParent(Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName).FullName).FullName, @"Images\hotel3.png")
-        };
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="BookingForm"/> class.
         /// </summary>
         public BookingForm()
         {
             InitializeComponent();
-            StartSlideshow();
             cmbRoomType.SelectedIndex = 0;
             dtpCheckIn.Value = DateTime.Today;
             dtpCheckOut.Value = DateTime.Today.AddDays(2);
         }
 
-        /// <summary>
-        /// Starts the hotel image slideshow in the form.
-        /// </summary>
-        private void StartSlideshow()
-        {
-            Timer timer = new Timer();
-            timer.Interval = 3000;
-            timer.Tick += (sender, e) =>
-            {
-                if (currentImageIndex >= hotelImages.Length)
-                    currentImageIndex = 0;
-                pictureBox.Image = Image.FromFile(hotelImages[currentImageIndex]);
-                currentImageIndex++;
-            };
-            timer.Start();
-        }
 
         /// <summary>
         /// Handles the Save button click event. Validates input, sends the booking to the server, and processes the response.
@@ -230,16 +203,6 @@ namespace Client
             {
                 e.Handled = true;
             }
-        }
-
-        /// <summary>
-        /// Handles the Get button click event. (Currently not implemented.)
-        /// </summary>
-        /// <param name="sender">The event sender.</param>
-        /// <param name="e">The event arguments.</param>
-        private void btnGet_Click(object sender, EventArgs e)
-        {
-
         }
     }
 }
