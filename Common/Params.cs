@@ -39,24 +39,6 @@ namespace Common
         }
 
         /// <summary>
-        /// Gets the certificate path from the configuration.
-        /// </summary>
-        /// <returns>The certificate path as a string.</returns>
-        public static string GetCertPath()
-        {
-            return _config?["certPath"]?.Value<string>() ?? string.Empty;
-        }
-
-        /// <summary>
-        /// Gets the password from the configuration.
-        /// </summary>
-        /// <returns>The password as a string.</returns>
-        public static string GetPassword()
-        {
-            return _config?["password"]?.Value<string>() ?? string.Empty;
-        }
-
-        /// <summary>
         /// Gets the server address from the configuration.
         /// </summary>
         /// <returns>The server address as a string.</returns>
