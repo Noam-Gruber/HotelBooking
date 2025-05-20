@@ -59,31 +59,27 @@ namespace Client
         /// </summary>
         private void SecureConnect()
         {
-            //stream = client.GetStream();
+            stream = client.GetStream();
 
-            using (var stream = client.GetStream())
-            {
+            // 1. Handshake: get public key
+            IOstring.WriteString(stream, "getpublickey");
+            string publicKeyXml = IOstring.ReadString(stream);
 
-                // 1. Handshake: get public key
-                IOstring.WriteString(stream, "getpublickey");
-                string publicKeyXml = IOstring.ReadString(stream);
+            // 2. Generate AES key and IV
+            using var aes = Aes.Create();
+            aes.GenerateKey();
+            aes.GenerateIV();
+            aesKey = aes.Key;
+            aesIV = aes.IV;
 
-                // 2. Generate AES key and IV
-                using var aes = Aes.Create();
-                aes.GenerateKey();
-                aes.GenerateIV();
-                aesKey = aes.Key;
-                aesIV = aes.IV;
+            // 3. Send encrypted AES key
+            using var rsa = new RSACryptoServiceProvider();
+            rsa.FromXmlString(publicKeyXml);
+            byte[] encryptedAesKey = rsa.Encrypt(aesKey, false);
+            IOstring.WriteString(stream, Convert.ToBase64String(encryptedAesKey));
 
-                // 3. Send encrypted AES key
-                using var rsa = new RSACryptoServiceProvider();
-                rsa.FromXmlString(publicKeyXml);
-                byte[] encryptedAesKey = rsa.Encrypt(aesKey, false);
-                IOstring.WriteString(stream, Convert.ToBase64String(encryptedAesKey));
-
-                // 4. Send IV
-                IOstring.WriteString(stream, Convert.ToBase64String(aesIV));
-            }
+            // 4. Send IV
+            IOstring.WriteString(stream, Convert.ToBase64String(aesIV));
         }
 
         // ------- API Functions: ---------
