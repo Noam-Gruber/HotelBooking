@@ -1,9 +1,8 @@
 ﻿using System;
-using System.IO;
+using Common;
 using System.Net;
 using System.Linq;
 using Server.Data;
-using System.Text;
 using Common.Messages;
 using Newtonsoft.Json;
 using System.Threading;
@@ -21,7 +20,7 @@ namespace Server
         /// <summary>
         /// The port number the server listens on.
         /// </summary>
-        private static readonly int _port = Common.Params.GetPort();
+        private static readonly int _port = Params.GetPort();
 
         /// <summary>
         /// The RSA key pair used for secure key exchange.
@@ -57,29 +56,29 @@ namespace Server
                 using (var stream = client.GetStream())
                 {
                     // Step 1: Handshake - send public key
-                    string handshakeCmd = ReadString(stream);
+                    string handshakeCmd = IOstring.ReadString(stream);
                     if (handshakeCmd != "getpublickey")
                         throw new Exception("Expected handshake getpublickey!");
 
                     string publicKey = rsa.ToXmlString(false); // public only
-                    WriteString(stream, publicKey);
+                    IOstring.WriteString(stream, publicKey);
 
                     // Step 2: Receive encrypted AES key (base64), and decrypt it
-                    string encryptedAesKeyB64 = ReadString(stream);
+                    string encryptedAesKeyB64 = IOstring.ReadString(stream);
                     byte[] encryptedAesKey = Convert.FromBase64String(encryptedAesKeyB64);
                     byte[] aesKey = rsa.Decrypt(encryptedAesKey, false);
 
                     // Step 3: Receive IV (base64)
-                    string ivB64 = ReadString(stream);
+                    string ivB64 = IOstring.ReadString(stream);
                     byte[] aesIV = Convert.FromBase64String(ivB64);
 
                     // Now ready to receive/send everything via AES
                     while (true)
                     {
                         // Step 4: Receive encrypted request (base64)
-                        string encReqB64 = ReadString(stream);
+                        string encReqB64 = IOstring.ReadString(stream);
                         byte[] encReq = Convert.FromBase64String(encReqB64);
-                        string reqJson = DecryptAes(encReq, aesKey, aesIV);
+                        string reqJson = Encription.DecryptAes(encReq, aesKey, aesIV);
 
                         var req = JsonConvert.DeserializeObject<RequestMessage>(reqJson);
 
@@ -146,8 +145,8 @@ namespace Server
                         // Step 6: Send encrypted response
                         var respObj = new { Status = statusCode, Data = result };
                         string respJson = JsonConvert.SerializeObject(respObj);
-                        byte[] encResp = EncryptAes(respJson, aesKey, aesIV);
-                        WriteString(stream, Convert.ToBase64String(encResp));
+                        byte[] encResp = Encription.EncryptAes(respJson, aesKey, aesIV);
+                        IOstring.WriteString(stream, Convert.ToBase64String(encResp));
                     }
                 }
             }
@@ -155,76 +154,6 @@ namespace Server
             {
                 Console.WriteLine($"Client error: {ex.Message}");
             }
-        }
-
-        // ===================== Tools =====================
-
-        /// <summary>
-        /// Writes a UTF-8 encoded string to the network stream, prefixed with its length.
-        /// </summary>
-        /// <param name="s">The network stream.</param>
-        /// <param name="str">The string to write.</param>
-        static void WriteString(NetworkStream s, string str)
-        {
-            var buf = Encoding.UTF8.GetBytes(str);
-            var len = BitConverter.GetBytes(buf.Length);
-            s.Write(len, 0, 4);
-            s.Write(buf, 0, buf.Length);
-        }
-
-        /// <summary>
-        /// Reads a UTF-8 encoded string from the network stream, using the prefixed length.
-        /// </summary>
-        /// <param name="s">The network stream.</param>
-        /// <returns>The string read from the stream.</returns>
-        static string ReadString(NetworkStream s)
-        {
-            var lenBuf = new byte[4];
-            s.Read(lenBuf, 0, 4);
-            int len = BitConverter.ToInt32(lenBuf, 0);
-
-            var buf = new byte[len];
-            int read = 0;
-            while (read < len) read += s.Read(buf, read, len - read);
-            return Encoding.UTF8.GetString(buf);
-        }
-
-        /// <summary>
-        /// Encrypts a plain text string using AES encryption.
-        /// </summary>
-        /// <param name="plain">The plain text to encrypt.</param>
-        /// <param name="key">The AES key.</param>
-        /// <param name="iv">The AES initialization vector.</param>
-        /// <returns>The encrypted data as a byte array.</returns>
-        static byte[] EncryptAes(string plain, byte[] key, byte[] iv)
-        {
-            using var aes = Aes.Create();
-            aes.Key = key; aes.IV = iv;
-            using var encryptor = aes.CreateEncryptor();
-            using var ms = new MemoryStream();
-            using var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
-            using var sw = new StreamWriter(cs);
-            sw.Write(plain);
-            sw.Close();
-            return ms.ToArray();
-        }
-
-        /// <summary>
-        /// Decrypts AES-encrypted data to a plain text string.
-        /// </summary>
-        /// <param name="data">The encrypted data.</param>
-        /// <param name="key">The AES key.</param>
-        /// <param name="iv">The AES initialization vector.</param>
-        /// <returns>The decrypted plain text string.</returns>
-        static string DecryptAes(byte[] data, byte[] key, byte[] iv)
-        {
-            using var aes = Aes.Create();
-            aes.Key = key; aes.IV = iv;
-            using var decryptor = aes.CreateDecryptor();
-            using var ms = new MemoryStream(data);
-            using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
-            using var sr = new StreamReader(cs);
-            return sr.ReadToEnd();
         }
     }
 }
