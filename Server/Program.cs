@@ -135,6 +135,33 @@ namespace Server
                                         result = "Not found for deletion";
                                     }
                                     break;
+
+                                case "sendchat":
+                                    req.ChatMessage.Timestamp = DateTime.Now;
+                                    db.ChatMessages.Add(req.ChatMessage);
+                                    db.SaveChanges();
+                                    result = req.ChatMessage;
+                                    statusCode = 201;
+                                    break;
+
+                                case "getchat":
+                                    var messages = db.ChatMessages
+                                        .Where(m => m.SessionId == req.SessionId || m.IsFromAdmin)
+                                        .OrderBy(m => m.Timestamp)
+                                        .ToList();
+                                    result = messages;
+                                    statusCode = 0;
+                                    break;
+
+                                case "getallchats":
+                                    // לאדמין - כל ההודעות
+                                    var allMessages = db.ChatMessages
+                                        .OrderBy(m => m.Timestamp)
+                                        .ToList();
+                                    result = allMessages;
+                                    statusCode = 0;
+                                    break;
+
                                 default:
                                     statusCode = 2;
                                     result = $"Unknown command '{req.Command}'";

@@ -21,5 +21,8 @@ namespace Common.Messages
         /// Gets or sets the booking object, used for create or update operations.
         /// </summary>
         public Booking Booking { get; set; }
+
+        public ChatMessage ChatMessage { get; set; }
+        public string SessionId { get; set; }
     }
 }

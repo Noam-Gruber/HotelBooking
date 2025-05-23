@@ -58,13 +58,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\ApplicationDbContext.cs" />
-    <Compile Include="Migrations\202505141845156_InitialCreate.cs" />
-    <Compile Include="Migrations\202505141845156_InitialCreate.Designer.cs">
-      <DependentUpon>202505141845156_InitialCreate.cs</DependentUpon>
+    <Compile Include="Migrations\202505231402234_InitialCreate.cs" />
+    <Compile Include="Migrations\202505231402234_InitialCreate.Designer.cs">
+      <DependentUpon>202505231402234_InitialCreate.cs</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\202505151948018_UpdateBookingModel.cs" />
-    <Compile Include="Migrations\202505151948018_UpdateBookingModel.Designer.cs">
-      <DependentUpon>202505151948018_UpdateBookingModel.cs</DependentUpon>
+    <Compile Include="Migrations\202505231406400_AddChatFeature.cs" />
+    <Compile Include="Migrations\202505231406400_AddChatFeature.Designer.cs">
+      <DependentUpon>202505231406400_AddChatFeature.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Program.cs" />
@@ -81,11 +81,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\202505141845156_InitialCreate.resx">
-      <DependentUpon>202505141845156_InitialCreate.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202505231402234_InitialCreate.resx">
+      <DependentUpon>202505231402234_InitialCreate.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202505151948018_UpdateBookingModel.resx">
-      <DependentUpon>202505151948018_UpdateBookingModel.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202505231406400_AddChatFeature.resx">
+      <DependentUpon>202505231406400_AddChatFeature.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -25,7 +25,8 @@ namespace Client.Forms
         /// The current list of bookings loaded from the server.
         /// </summary>
         private List<Booking> currentBookings = new List<Booking>();
-
+        private Timer adminChatRefreshTimer;
+        private List<ChatMessage> allChatMessages = new List<ChatMessage>();
         /// <summary>
         /// Initializes a new instance of the <see cref="AdminForm"/> class.
         /// </summary>
@@ -36,6 +37,7 @@ namespace Client.Forms
             this.api = api;
             SetupDataGridView();
             LoadBookings();
+            StartAdminChatRefresh();
         }
 
         /// <summary>
@@ -200,6 +202,109 @@ namespace Client.Forms
             else
             {
                 dataGridView.Rows[e.RowIndex].DefaultCellStyle.BackColor = System.Drawing.Color.White;
+            }
+        }
+
+        /// <summary>
+        /// מתחיל לרענן את הצ'אט של האדמין
+        /// </summary>
+        private void StartAdminChatRefresh()
+        {
+            adminChatRefreshTimer = new Timer();
+            adminChatRefreshTimer.Interval = 2000; // כל 2 שניות
+            adminChatRefreshTimer.Tick += (s, e) => RefreshAdminChat();
+            adminChatRefreshTimer.Start();
+            RefreshAdminChat(); // רענון ראשוני
+        }
+
+        /// <summary>
+        /// מרענן את הודעות הצ'אט של האדמין
+        /// </summary>
+        private void RefreshAdminChat()
+        {
+            try
+            {
+                var messages = api.GetAllChatMessages();
+                if (messages.Count != allChatMessages.Count)
+                {
+                    allChatMessages = messages;
+                    UpdateAdminChatDisplay();
+                }
+            }
+            catch (Exception ex)
+            {
+                // במקרה של שגיאה, לא מציגים הודעה
+            }
+        }
+
+        /// <summary>
+        /// מעדכן את התצוגה של הצ'אט של האדמין
+        /// </summary>
+        private void UpdateAdminChatDisplay()
+        {
+            richTextBox1.Clear();
+
+            // קיבוץ הודעות לפי סשן
+            var grouped = allChatMessages.GroupBy(m => m.SessionId ?? "unknown").ToList();
+
+            foreach (var group in grouped)
+            {
+                richTextBox1.AppendText($"=== Session: {group.Key} ===\n");
+                foreach (var msg in group.OrderBy(m => m.Timestamp))
+                {
+                    string prefix = msg.IsFromAdmin ? "[Admin]" : "[Guest]";
+                    richTextBox1.AppendText($"{prefix} {msg.SenderName}: {msg.Message} ({msg.Timestamp:HH:mm})\n");
+                }
+                richTextBox1.AppendText("\n");
+            }
+
+            // גלילה למטה
+            richTextBox1.SelectionStart = richTextBox1.Text.Length;
+            richTextBox1.ScrollToCaret();
+        }
+
+        /// <summary>
+        /// שליחת הודעה כאדמין
+        /// </summary>
+        private void SendAdminMessage()
+        {
+            string messageText = textBox_message.Text.Trim();
+            if (string.IsNullOrEmpty(messageText))
+                return;
+
+            try
+            {
+                // שליחה לכל הסשנים הפעילים או לסשן מסוים
+                var message = new ChatMessage
+                {
+                    SenderName = "Admin",
+                    Message = messageText,
+                    IsFromAdmin = true,
+                    SessionId = null // הודעה גלובלית
+                };
+
+                api.SendChatMessage(message);
+                textBox_message.Clear();
+                RefreshAdminChat(); // רענון מיידי
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to send admin message: " + ex.Message, "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void buttonSend_Click(object sender, EventArgs e)
+        {
+            SendAdminMessage();
+        }
+
+        private void textBox_message_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == (char)Keys.Enter)
+            {
+                SendAdminMessage();
+                e.Handled = true;
             }
         }
     }

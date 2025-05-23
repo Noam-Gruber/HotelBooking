@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Common.Entities;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Media;
-using System.Drawing;
 using System.Windows.Forms;
 
 namespace Client.Forms
@@ -27,6 +29,9 @@ namespace Client.Forms
         /// </summary>
         private int currentQuote = 0;
 
+        private string currentSessionId;
+        private Timer chatRefreshTimer;
+        private List<ChatMessage> currentMessages = new List<ChatMessage>();
         /// <summary>
         /// Array of hotel image file paths for the slideshow.
         /// </summary>
@@ -64,6 +69,8 @@ namespace Client.Forms
             StartSlideshow();
             StartQuoteRotation();
             PlayWelcomeSound();
+            currentSessionId = Guid.NewGuid().ToString(); // יצירת סשן ייחודי
+            StartChatRefresh();
         }
 
         /// <summary>
@@ -170,6 +177,98 @@ namespace Client.Forms
         private void btnNewBooking_MouseLeave(object sender, EventArgs e)
         {
             btnNewBooking.BackColor = Color.DeepSkyBlue;
+        }
+
+        /// <summary>
+        /// מתחיל לרענן את הצ'אט כל כמה שניות
+        /// </summary>
+        private void StartChatRefresh()
+        {
+            chatRefreshTimer = new Timer();
+            chatRefreshTimer.Interval = 3000; // כל 3 שניות
+            chatRefreshTimer.Tick += (s, e) => RefreshChat();
+            chatRefreshTimer.Start();
+        }
+
+        /// <summary>
+        /// מרענן את הודעות הצ'אט
+        /// </summary>
+        private void RefreshChat()
+        {
+            try
+            {
+                var messages = api.GetChatMessages(currentSessionId);
+                if (messages.Count != currentMessages.Count)
+                {
+                    currentMessages = messages;
+                    UpdateChatDisplay();
+                }
+            }
+            catch (Exception ex)
+            {
+                // במקרה של שגיאה, לא מציגים הודעה כי זה רק רענון
+            }
+        }
+
+        /// <summary>
+        /// מעדכן את התצוגה של הצ'אט
+        /// </summary>
+        private void UpdateChatDisplay()
+        {
+            richTextBox1.Clear();
+            foreach (var msg in currentMessages)
+            {
+                string prefix = msg.IsFromAdmin ? "[Admin]" : "[You]";
+                richTextBox1.AppendText($"{prefix} {msg.SenderName}: {msg.Message}\n");
+            }
+
+            // גלילה למטה
+            richTextBox1.SelectionStart = richTextBox1.Text.Length;
+            richTextBox1.ScrollToCaret();
+        }
+
+        /// <summary>
+        /// שליחת הודעה בצ'אט
+        /// </summary>
+        private void SendChatMessage()
+        {
+            string messageText = textBox_message.Text.Trim();
+            if (string.IsNullOrEmpty(messageText))
+                return;
+
+            try
+            {
+                var message = new ChatMessage
+                {
+                    SenderName = "Guest",
+                    Message = messageText,
+                    IsFromAdmin = false,
+                    SessionId = currentSessionId
+                };
+
+                api.SendChatMessage(message);
+                textBox_message.Clear();
+                RefreshChat(); // רענון מיידי
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to send message: " + ex.Message, "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void buttonSend_Click(object sender, EventArgs e)
+        {
+            SendChatMessage();
+        }
+
+        private void textBox_message_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == (char)Keys.Enter)
+            {
+                SendChatMessage();
+                e.Handled = true;
+            }
         }
     }
 }

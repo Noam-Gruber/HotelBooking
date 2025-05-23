@@ -167,6 +167,51 @@ namespace Client
         }
 
         /// <summary>
+        /// שולח הודעת צ'אט לשרת
+        /// </summary>
+        public void SendChatMessage(ChatMessage message)
+        {
+            var req = new RequestMessage { Command = "sendchat", ChatMessage = message };
+            WriteEncrypted(req);
+
+            var respJson = ReadEncrypted();
+            var resp = JsonConvert.DeserializeObject<ResponseMessage<ChatMessage>>(respJson);
+
+            if (resp.Status != 201)
+                throw new Exception("Failed to send message: " + resp.Data);
+        }
+
+        /// <summary>
+        /// מקבל הודעות צ'אט עבור סשן מסוים
+        /// </summary>
+        public List<ChatMessage> GetChatMessages(string sessionId)
+        {
+            WriteEncrypted(new RequestMessage { Command = "getchat", SessionId = sessionId });
+            string respJson = ReadEncrypted();
+            var resp = JsonConvert.DeserializeObject<ResponseMessage<List<ChatMessage>>>(respJson);
+
+            if (resp.Status != 0)
+                throw new Exception("Failed to get messages: " + resp.Data);
+
+            return resp.Data ?? new List<ChatMessage>();
+        }
+
+        /// <summary>
+        /// מקבל את כל הודעות הצ'אט (לאדמין)
+        /// </summary>
+        public List<ChatMessage> GetAllChatMessages()
+        {
+            WriteEncrypted(new RequestMessage { Command = "getallchats" });
+            string respJson = ReadEncrypted();
+            var resp = JsonConvert.DeserializeObject<ResponseMessage<List<ChatMessage>>>(respJson);
+
+            if (resp.Status != 0)
+                throw new Exception("Failed to get all messages: " + resp.Data);
+
+            return resp.Data ?? new List<ChatMessage>();
+        }
+
+        /// <summary>
         /// Releases all resources used by the <see cref="Services"/> instance.
         /// </summary>
         public void Dispose()
