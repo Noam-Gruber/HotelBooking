@@ -121,7 +121,7 @@
   <data name="pictureBox.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAO
-        wAAADsABataJCQAABXJJREFUWEfFV+tTVGUY579R+eKoWJTIBkyNkvUF0S4ftKlRxJpBMi+AmLcEbEZL
+        vgAADr4B6kKxwAAABXJJREFUWEfFV+tTVGUY579R+eKoWJTIBkyNkvUF0S4ftKlRxJpBMi+AmLcEbEZL
         /dCUzmA2iDRqqCTYVBNixMJwkxJSWkC5Cwt7ll32wq/n9+6e5ezhLC3jh34zz55nn/t7Oc/7ngQsER4f
         MDg5h64nQdh7A4rIU0bdUhFXAV4/0DkQwMVfZ5F/2YO3zrrxxuduZJZpishTRh1taEufeLBoAf4A0PQ4
         gMKrnkiynRdmUHrTi0v1Plyzh4g8ZdTpdvShL2MshpgFjE3P4cvaWRVs8xdunL8bGpnLO4e5ubCRAZRp
@@ -147,9 +147,6 @@
         f5oZwbfgf/k4tQL7Nw8RnmQ8TknkKaNuaQD+BaxtvP7fL1rxAAAAAElFTkSuQmCC
 </value>
   </data>
-  <metadata name="richTextBox1.Locked" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-    <value>True</value>
-  </metadata>
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         AAABAAEAICAAAAEAIACoEAAAFgAAACgAAAAgAAAAQAAAAAEAIAAAAAAAABAAACMuAAAjLgAAAAAAAAAA

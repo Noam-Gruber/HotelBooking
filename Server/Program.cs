@@ -146,7 +146,7 @@ namespace Server
 
                                 case "getchat":
                                     var messages = db.ChatMessages
-                                        .Where(m => m.SessionId == req.SessionId || m.IsFromAdmin)
+                                        .Where(m => m.SessionId == req.SessionId)
                                         .OrderBy(m => m.Timestamp)
                                         .ToList();
                                     result = messages;
@@ -161,6 +161,22 @@ namespace Server
                                     result = allMessages;
                                     statusCode = 0;
                                     break;
+
+                                case "deleteoldchats":
+                                    int minutes = req.Minutes;
+                                    DateTime cutoff = DateTime.Now.AddMinutes(-minutes);
+                                    var oldSessions = db.ChatMessages
+                                        .GroupBy(m => m.SessionId)
+                                        .Where(g => g.Max(m => m.Timestamp) < cutoff)
+                                        .Select(g => g.Key)
+                                        .ToList();
+                                    var messagesToDelete = db.ChatMessages.Where(m => oldSessions.Contains(m.SessionId));
+                                    db.ChatMessages.RemoveRange(messagesToDelete);
+                                    db.SaveChanges();
+                                    statusCode = 0;
+                                    result = "Deleted old chats";
+                                    break;
+
 
                                 default:
                                     statusCode = 2;

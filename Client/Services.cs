@@ -211,6 +211,15 @@ namespace Client
             return resp.Data ?? new List<ChatMessage>();
         }
 
+        public void DeleteOldChats(int minutes)
+        {
+            WriteEncrypted(new RequestMessage { Command = "deleteoldchats", Minutes = minutes });
+            string respJson = ReadEncrypted();
+            var resp = JsonConvert.DeserializeObject<ResponseMessage<string>>(respJson);
+            if (resp.Status != 0)
+                throw new Exception("Server error: " + resp.Data);
+        }
+
         /// <summary>
         /// Releases all resources used by the <see cref="Services"/> instance.
         /// </summary>

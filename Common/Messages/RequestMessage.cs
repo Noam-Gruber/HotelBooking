@@ -24,5 +24,8 @@ namespace Common.Messages
 
         public ChatMessage ChatMessage { get; set; }
         public string SessionId { get; set; }
+
+        // <<< הוספת שדה למחיקת צ'אטים ישנים >>>
+        public int Minutes { get; set; }
     }
 }

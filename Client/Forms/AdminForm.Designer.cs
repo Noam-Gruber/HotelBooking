@@ -36,9 +36,12 @@
             this.pictureBox = new System.Windows.Forms.PictureBox();
             this.accentBar = new System.Windows.Forms.Panel();
             this.groupBox_chat = new System.Windows.Forms.GroupBox();
+            this.labelSelectClient = new System.Windows.Forms.Label();
+            this.comboBoxClients = new System.Windows.Forms.ComboBox();
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.textBox_message = new System.Windows.Forms.TextBox();
             this.buttonSend = new System.Windows.Forms.Button();
+            this.btnDeleteOldChats = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).BeginInit();
             this.groupBox_chat.SuspendLayout();
@@ -122,29 +125,50 @@
             // 
             // groupBox_chat
             // 
+            this.groupBox_chat.Controls.Add(this.btnDeleteOldChats);
+            this.groupBox_chat.Controls.Add(this.labelSelectClient);
+            this.groupBox_chat.Controls.Add(this.comboBoxClients);
             this.groupBox_chat.Controls.Add(this.richTextBox1);
             this.groupBox_chat.Controls.Add(this.textBox_message);
             this.groupBox_chat.Controls.Add(this.buttonSend);
             this.groupBox_chat.Location = new System.Drawing.Point(16, 445);
             this.groupBox_chat.Name = "groupBox_chat";
-            this.groupBox_chat.Size = new System.Drawing.Size(817, 160);
+            this.groupBox_chat.Size = new System.Drawing.Size(958, 206);
             this.groupBox_chat.TabIndex = 25;
             this.groupBox_chat.TabStop = false;
             this.groupBox_chat.Text = "Chat";
             // 
+            // labelSelectClient
+            // 
+            this.labelSelectClient.AutoSize = true;
+            this.labelSelectClient.Location = new System.Drawing.Point(6, 25);
+            this.labelSelectClient.Name = "labelSelectClient";
+            this.labelSelectClient.Size = new System.Drawing.Size(102, 20);
+            this.labelSelectClient.TabIndex = 4;
+            this.labelSelectClient.Text = "Select Client:";
+            // 
+            // comboBoxClients
+            // 
+            this.comboBoxClients.FormattingEnabled = true;
+            this.comboBoxClients.Location = new System.Drawing.Point(6, 49);
+            this.comboBoxClients.Name = "comboBoxClients";
+            this.comboBoxClients.Size = new System.Drawing.Size(344, 28);
+            this.comboBoxClients.TabIndex = 3;
+            // 
             // richTextBox1
             // 
-            this.richTextBox1.Location = new System.Drawing.Point(299, 25);
+            this.richTextBox1.Location = new System.Drawing.Point(356, 25);
             this.richTextBox1.Name = "richTextBox1";
-            this.richTextBox1.Size = new System.Drawing.Size(509, 129);
+            this.richTextBox1.ReadOnly = true;
+            this.richTextBox1.Size = new System.Drawing.Size(596, 175);
             this.richTextBox1.TabIndex = 2;
             this.richTextBox1.Text = "";
             // 
             // textBox_message
             // 
-            this.textBox_message.Location = new System.Drawing.Point(6, 25);
+            this.textBox_message.Location = new System.Drawing.Point(6, 92);
             this.textBox_message.Name = "textBox_message";
-            this.textBox_message.Size = new System.Drawing.Size(287, 26);
+            this.textBox_message.Size = new System.Drawing.Size(344, 26);
             this.textBox_message.TabIndex = 1;
             this.textBox_message.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.textBox_message_KeyPress);
             // 
@@ -154,20 +178,30 @@
             this.buttonSend.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonSend.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F);
             this.buttonSend.ForeColor = System.Drawing.Color.White;
-            this.buttonSend.Location = new System.Drawing.Point(6, 57);
+            this.buttonSend.Location = new System.Drawing.Point(6, 133);
             this.buttonSend.Name = "buttonSend";
-            this.buttonSend.Size = new System.Drawing.Size(287, 44);
+            this.buttonSend.Size = new System.Drawing.Size(344, 55);
             this.buttonSend.TabIndex = 0;
             this.buttonSend.Text = "Send";
             this.buttonSend.UseVisualStyleBackColor = false;
             this.buttonSend.Click += new System.EventHandler(this.buttonSend_Click);
+            // 
+            // btnDeleteOldChats
+            // 
+            this.btnDeleteOldChats.Location = new System.Drawing.Point(178, 13);
+            this.btnDeleteOldChats.Name = "btnDeleteOldChats";
+            this.btnDeleteOldChats.Size = new System.Drawing.Size(160, 32);
+            this.btnDeleteOldChats.TabIndex = 5;
+            this.btnDeleteOldChats.Text = "Delete Old Chats";
+            this.btnDeleteOldChats.UseVisualStyleBackColor = true;
+            this.btnDeleteOldChats.Click += new System.EventHandler(this.btnDeleteOldChats_Click);
             // 
             // AdminForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.AliceBlue;
-            this.ClientSize = new System.Drawing.Size(1299, 617);
+            this.ClientSize = new System.Drawing.Size(1299, 663);
             this.Controls.Add(this.groupBox_chat);
             this.Controls.Add(this.accentBar);
             this.Controls.Add(this.pictureBox);
@@ -199,5 +233,8 @@
         private System.Windows.Forms.RichTextBox richTextBox1;
         private System.Windows.Forms.TextBox textBox_message;
         private System.Windows.Forms.Button buttonSend;
+        private System.Windows.Forms.ComboBox comboBoxClients;
+        private System.Windows.Forms.Label labelSelectClient;
+        private System.Windows.Forms.Button btnDeleteOldChats;
     }
 }

@@ -7,17 +7,17 @@ using System.Collections.Generic;
 namespace Client.Forms
 {
     /// <summary>
-    /// Represents the administration form for managing bookings.
+    /// Represents the admin form for managing bookings and handling chat with customers.
     /// </summary>
     public partial class AdminForm : Form
     {
         /// <summary>
-        /// The API service used for booking operations.
+        /// The API service used for booking and chat operations.
         /// </summary>
         private readonly Services api;
 
         /// <summary>
-        /// The binding source for the DataGridView.
+        /// The binding source for the bookings data grid.
         /// </summary>
         private BindingSource bindingSource = new BindingSource();
 
@@ -25,12 +25,26 @@ namespace Client.Forms
         /// The current list of bookings loaded from the server.
         /// </summary>
         private List<Booking> currentBookings = new List<Booking>();
+
+        /// <summary>
+        /// Timer for periodically refreshing the admin chat.
+        /// </summary>
         private Timer adminChatRefreshTimer;
+
+        /// <summary>
+        /// All chat messages loaded for the admin.
+        /// </summary>
         private List<ChatMessage> allChatMessages = new List<ChatMessage>();
+
+        /// <summary>
+        /// The currently selected session ID for chat.
+        /// </summary>
+        private string selectedSessionId = null;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="AdminForm"/> class.
         /// </summary>
-        /// <param name="api">The API service for booking operations.</param>
+        /// <param name="api">The API service for booking and chat operations.</param>
         public AdminForm(Services api)
         {
             InitializeComponent();
@@ -38,10 +52,13 @@ namespace Client.Forms
             SetupDataGridView();
             LoadBookings();
             StartAdminChatRefresh();
+
+            // Listen for client selection changes
+            comboBoxClients.SelectedIndexChanged += comboBoxClients_SelectedIndexChanged;
         }
 
         /// <summary>
-        /// Configures the columns and properties of the DataGridView.
+        /// Configures the columns and settings for the bookings data grid view.
         /// </summary>
         private void SetupDataGridView()
         {
@@ -90,7 +107,7 @@ namespace Client.Forms
         }
 
         /// <summary>
-        /// Applies the search filter to the bookings and updates the DataGridView.
+        /// Applies the search filter to the bookings list and updates the data grid.
         /// </summary>
         private void ApplyFilter()
         {
@@ -107,22 +124,16 @@ namespace Client.Forms
         /// <summary>
         /// Handles the Refresh button click event to reload bookings.
         /// </summary>
-        /// <param name="sender">The event sender.</param>
-        /// <param name="e">The event arguments.</param>
         private void btnRefresh_Click(object sender, EventArgs e) => LoadBookings();
 
         /// <summary>
-        /// Handles the TextChanged event of the search textbox to filter bookings.
+        /// Handles the TextChanged event for the search textbox to apply the filter.
         /// </summary>
-        /// <param name="sender">The event sender.</param>
-        /// <param name="e">The event arguments.</param>
         private void txtSearch_TextChanged(object sender, EventArgs e) => ApplyFilter();
 
         /// <summary>
-        /// Handles the Add button click event to add a new booking.
+        /// Handles the Add button click event to open the booking form and add a new booking.
         /// </summary>
-        /// <param name="sender">The event sender.</param>
-        /// <param name="e">The event arguments.</param>
         private void btnAdd_Click(object sender, EventArgs e)
         {
             using (var bookingForm = new BookingForm(api))
@@ -136,10 +147,8 @@ namespace Client.Forms
         }
 
         /// <summary>
-        /// Handles the CellEndEdit event to update a booking after editing.
+        /// Handles the CellEndEdit event for the data grid to update a booking after editing.
         /// </summary>
-        /// <param name="sender">The event sender.</param>
-        /// <param name="e">The event arguments.</param>
         private void dataGridView_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
             var row = dataGridView.Rows[e.RowIndex].DataBoundItem as Booking;
@@ -158,10 +167,8 @@ namespace Client.Forms
         }
 
         /// <summary>
-        /// Handles the CellContentClick event to delete a booking when the delete button is clicked.
+        /// Handles the CellContentClick event for the data grid to delete a booking when the delete button is clicked.
         /// </summary>
-        /// <param name="sender">The event sender.</param>
-        /// <param name="e">The event arguments.</param>
         private void dataGridView_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.ColumnIndex == dataGridView.Columns["colDelete"].Index && e.RowIndex >= 0)
@@ -188,10 +195,8 @@ namespace Client.Forms
         }
 
         /// <summary>
-        /// Highlights future bookings in green in the DataGridView.
+        /// Handles the RowPrePaint event to highlight future bookings in the data grid.
         /// </summary>
-        /// <param name="sender">The event sender.</param>
-        /// <param name="e">The event arguments.</param>
         private void DataGridView_RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e)
         {
             var row = dataGridView.Rows[e.RowIndex].DataBoundItem as Booking;
@@ -205,66 +210,115 @@ namespace Client.Forms
             }
         }
 
+        // ---- Chat Section ----
+
         /// <summary>
-        /// מתחיל לרענן את הצ'אט של האדמין
+        /// Starts the timer to periodically refresh the admin chat.
         /// </summary>
         private void StartAdminChatRefresh()
         {
             adminChatRefreshTimer = new Timer();
-            adminChatRefreshTimer.Interval = 2000; // כל 2 שניות
+            adminChatRefreshTimer.Interval = 2000;
             adminChatRefreshTimer.Tick += (s, e) => RefreshAdminChat();
             adminChatRefreshTimer.Start();
-            RefreshAdminChat(); // רענון ראשוני
+            RefreshAdminChat();
         }
 
         /// <summary>
-        /// מרענן את הודעות הצ'אט של האדמין
+        /// Refreshes the admin chat messages and updates the UI.
         /// </summary>
         private void RefreshAdminChat()
         {
             try
             {
                 var messages = api.GetAllChatMessages();
-                if (messages.Count != allChatMessages.Count)
-                {
-                    allChatMessages = messages;
-                    UpdateAdminChatDisplay();
-                }
+                allChatMessages = messages;
+                UpdateClientsComboBox();
+                UpdateAdminChatDisplay();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // במקרה של שגיאה, לא מציגים הודעה
+                // Do not show error every 2 seconds
             }
         }
 
         /// <summary>
-        /// מעדכן את התצוגה של הצ'אט של האדמין
+        /// Updates the clients combo box with all active session IDs.
+        /// </summary>
+        private void UpdateClientsComboBox()
+        {
+            var sessionIds = allChatMessages
+                .Select(m => m.SessionId)
+                .Where(id => !string.IsNullOrEmpty(id))
+                .Distinct()
+                .OrderBy(id => id)
+                .ToList();
+
+            string previousSelected = comboBoxClients.SelectedItem?.ToString();
+
+            comboBoxClients.Items.Clear();
+            foreach (var id in sessionIds)
+                comboBoxClients.Items.Add(id);
+
+            // Try to restore previous selection
+            if (!string.IsNullOrEmpty(previousSelected) && sessionIds.Contains(previousSelected))
+                comboBoxClients.SelectedItem = previousSelected;
+            // If no selection, select the first (if exists)
+            else if (comboBoxClients.Items.Count > 0 && comboBoxClients.SelectedIndex == -1)
+                comboBoxClients.SelectedIndex = 0;
+        }
+
+        /// <summary>
+        /// Updates the chat display for the selected client session.
         /// </summary>
         private void UpdateAdminChatDisplay()
         {
             richTextBox1.Clear();
+            selectedSessionId = comboBoxClients.SelectedItem?.ToString();
 
-            // קיבוץ הודעות לפי סשן
-            var grouped = allChatMessages.GroupBy(m => m.SessionId ?? "unknown").ToList();
-
-            foreach (var group in grouped)
+            if (string.IsNullOrEmpty(selectedSessionId))
             {
-                richTextBox1.AppendText($"=== Session: {group.Key} ===\n");
-                foreach (var msg in group.OrderBy(m => m.Timestamp))
-                {
-                    string prefix = msg.IsFromAdmin ? "[Admin]" : "[Guest]";
-                    richTextBox1.AppendText($"{prefix} {msg.SenderName}: {msg.Message} ({msg.Timestamp:HH:mm})\n");
-                }
-                richTextBox1.AppendText("\n");
+                richTextBox1.AppendText("Select a client from the combo box to view the conversation...");
+                return;
             }
 
-            // גלילה למטה
+            var messages = allChatMessages
+                .Where(m => m.SessionId == selectedSessionId)
+                .OrderBy(m => m.Timestamp)
+                .ToList();
+
+            foreach (var msg in messages)
+            {
+                richTextBox1.SelectionStart = richTextBox1.TextLength;
+                richTextBox1.SelectionLength = 0;
+
+                // Different color for each side
+                if (msg.IsFromAdmin)
+                    richTextBox1.SelectionBackColor = System.Drawing.Color.LightBlue;
+                else
+                    richTextBox1.SelectionBackColor = System.Drawing.Color.LightGray;
+
+                // Name + message
+                string prefix = msg.IsFromAdmin ? "🛎️ Admin" : "👤 Guest";
+                richTextBox1.SelectionFont = new System.Drawing.Font("Segoe UI", 10, System.Drawing.FontStyle.Bold);
+
+                richTextBox1.AppendText($"{prefix}: ");
+
+                // Regular text (not name)
+                richTextBox1.SelectionFont = new System.Drawing.Font("Segoe UI", 10, System.Drawing.FontStyle.Regular);
+                richTextBox1.AppendText($"{msg.Message} ");
+                richTextBox1.SelectionFont = new System.Drawing.Font("Segoe UI", 8, System.Drawing.FontStyle.Italic);
+                richTextBox1.AppendText($"({msg.Timestamp:HH:mm})\n");
+
+                // Reset color
+                richTextBox1.SelectionBackColor = richTextBox1.BackColor;
+            }
             richTextBox1.SelectionStart = richTextBox1.Text.Length;
             richTextBox1.ScrollToCaret();
         }
 
         /// <summary>
-        /// שליחת הודעה כאדמין
+        /// Sends an admin message to the selected client session.
         /// </summary>
         private void SendAdminMessage()
         {
@@ -272,20 +326,26 @@ namespace Client.Forms
             if (string.IsNullOrEmpty(messageText))
                 return;
 
+            string targetSessionId = comboBoxClients.SelectedItem?.ToString();
+            if (string.IsNullOrEmpty(targetSessionId))
+            {
+                MessageBox.Show("Please select a client to send the message to!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             try
             {
-                // שליחה לכל הסשנים הפעילים או לסשן מסוים
                 var message = new ChatMessage
                 {
                     SenderName = "Admin",
                     Message = messageText,
                     IsFromAdmin = true,
-                    SessionId = null // הודעה גלובלית
+                    SessionId = targetSessionId // Send to the specific session
                 };
 
                 api.SendChatMessage(message);
                 textBox_message.Clear();
-                RefreshAdminChat(); // רענון מיידי
+                RefreshAdminChat(); // Immediate refresh
             }
             catch (Exception ex)
             {
@@ -294,17 +354,48 @@ namespace Client.Forms
             }
         }
 
+        /// <summary>
+        /// Handles the Send button click event to send an admin chat message.
+        /// </summary>
         private void buttonSend_Click(object sender, EventArgs e)
         {
             SendAdminMessage();
         }
 
+        /// <summary>
+        /// Handles the KeyPress event for the message textbox to send a message on Enter key.
+        /// </summary>
         private void textBox_message_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == (char)Keys.Enter)
             {
                 SendAdminMessage();
                 e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// Handles the SelectedIndexChanged event for the clients combo box to update the chat display.
+        /// </summary>
+        private void comboBoxClients_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdateAdminChatDisplay();
+        }
+
+        /// <summary>
+        /// Handles the Delete Old Chats button click event to delete chats older than 5 minutes.
+        /// </summary>
+        private void btnDeleteOldChats_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                api.DeleteOldChats(5); // Delete chats not active for over 5 minutes
+                RefreshAdminChat();
+                MessageBox.Show("Old chats deleted successfully.", "Delete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error deleting chats: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }
