@@ -21,5 +21,20 @@ namespace Common.Messages
         /// Gets or sets the booking object, used for create or update operations.
         /// </summary>
         public Booking Booking { get; set; }
+
+        /// <summary>
+        /// Gets or sets the chat message object, used for chat-related operations.
+        /// </summary>
+        public ChatMessage ChatMessage { get; set; }
+
+        /// <summary>
+        /// Gets or sets the session identifier, used to associate the request with a specific session.
+        /// </summary>
+        public string SessionId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of minutes used for operations such as deleting old chat messages.
+        /// </summary>
+        public int Minutes { get; set; }
     }
 }

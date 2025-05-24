@@ -91,21 +91,25 @@ namespace Server
                             switch (req.Command?.ToLowerInvariant())
                             {
                                 case "getall":
+                                    // Retrieves all bookings ordered by check-in date.
                                     result = db.Bookings.OrderBy(b => b.CheckInDate).ToList();
                                     statusCode = 0;
                                     break;
                                 case "get":
+                                    // Retrieves a booking by its ID.
                                     var item = db.Bookings.Find(req.Id);
                                     if (item == null) statusCode = 1;
                                     else result = item;
                                     break;
                                 case "create":
+                                    // Creates a new booking.
                                     db.Bookings.Add(req.Booking);
                                     db.SaveChanges();
                                     result = req.Booking;
                                     statusCode = 201;
                                     break;
                                 case "update":
+                                    // Updates an existing booking.
                                     var updateItem = db.Bookings.Find(req.Booking.Id);
                                     if (updateItem != null)
                                     {
@@ -121,6 +125,7 @@ namespace Server
                                     }
                                     break;
                                 case "delete":
+                                    // Deletes a booking by its ID.
                                     var deleteItem = db.Bookings.Find(req.Id);
                                     if (deleteItem != null)
                                     {
@@ -135,7 +140,53 @@ namespace Server
                                         result = "Not found for deletion";
                                     }
                                     break;
+
+                                case "sendchat":
+                                    // Stores a chat message with the current timestamp.
+                                    req.ChatMessage.Timestamp = DateTime.Now;
+                                    db.ChatMessages.Add(req.ChatMessage);
+                                    db.SaveChanges();
+                                    result = req.ChatMessage;
+                                    statusCode = 201;
+                                    break;
+
+                                case "getchat":
+                                    // Retrieves chat messages for a specific session.
+                                    var messages = db.ChatMessages
+                                        .Where(m => m.SessionId == req.SessionId)
+                                        .OrderBy(m => m.Timestamp)
+                                        .ToList();
+                                    result = messages;
+                                    statusCode = 0;
+                                    break;
+
+                                case "getallchats":
+                                    // Retrieves all chat messages (admin only).
+                                    var allMessages = db.ChatMessages
+                                        .OrderBy(m => m.Timestamp)
+                                        .ToList();
+                                    result = allMessages;
+                                    statusCode = 0;
+                                    break;
+
+                                case "deleteoldchats":
+                                    // Deletes chat sessions older than a specified number of minutes.
+                                    int minutes = req.Minutes;
+                                    DateTime cutoff = DateTime.Now.AddMinutes(-minutes);
+                                    var oldSessions = db.ChatMessages
+                                        .GroupBy(m => m.SessionId)
+                                        .Where(g => g.Max(m => m.Timestamp) < cutoff)
+                                        .Select(g => g.Key)
+                                        .ToList();
+                                    var messagesToDelete = db.ChatMessages.Where(m => oldSessions.Contains(m.SessionId));
+                                    db.ChatMessages.RemoveRange(messagesToDelete);
+                                    db.SaveChanges();
+                                    statusCode = 0;
+                                    result = "Deleted old chats";
+                                    break;
+
                                 default:
+                                    // Handles unknown commands.
                                     statusCode = 2;
                                     result = $"Unknown command '{req.Command}'";
                                     break;

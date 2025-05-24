@@ -2,7 +2,9 @@
 using System.IO;
 using System.Media;
 using System.Drawing;
+using Common.Entities;
 using System.Windows.Forms;
+using System.Collections.Generic;
 
 namespace Client.Forms
 {
@@ -26,6 +28,21 @@ namespace Client.Forms
         /// The current index of the quote being displayed.
         /// </summary>
         private int currentQuote = 0;
+
+        /// <summary>
+        /// The unique session ID for the current chat session.
+        /// </summary>
+        private string currentSessionId;
+
+        /// <summary>
+        /// Timer for periodically refreshing the chat messages.
+        /// </summary>
+        private Timer chatRefreshTimer;
+
+        /// <summary>
+        /// The current list of chat messages for the session.
+        /// </summary>
+        private List<ChatMessage> currentMessages = new List<ChatMessage>();
 
         /// <summary>
         /// Array of hotel image file paths for the slideshow.
@@ -55,6 +72,7 @@ namespace Client.Forms
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WelcomeForm"/> class.
+        /// Sets up the slideshow, quote rotation, welcome sound, chat session, and initial greeting.
         /// </summary>
         public WelcomeForm()
         {
@@ -64,6 +82,9 @@ namespace Client.Forms
             StartSlideshow();
             StartQuoteRotation();
             PlayWelcomeSound();
+            currentSessionId = Guid.NewGuid().ToString(); // Create unique session
+            StartChatRefresh();
+            SendInitialGreeting();
         }
 
         /// <summary>
@@ -133,7 +154,7 @@ namespace Client.Forms
         }
 
         /// <summary>
-        /// Handles the Admin Login button click event. Opens the admin login form.
+        /// Handles the Admin Login button click event. Opens the admin login form and, if successful, the admin form.
         /// </summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event arguments.</param>
@@ -170,6 +191,150 @@ namespace Client.Forms
         private void btnNewBooking_MouseLeave(object sender, EventArgs e)
         {
             btnNewBooking.BackColor = Color.DeepSkyBlue;
+        }
+
+        /// <summary>
+        /// Starts the timer to periodically refresh the chat messages.
+        /// </summary>
+        private void StartChatRefresh()
+        {
+            chatRefreshTimer = new Timer();
+            chatRefreshTimer.Interval = 3000; // Every 3 seconds
+            chatRefreshTimer.Tick += (s, e) => RefreshChat();
+            chatRefreshTimer.Start();
+        }
+
+        /// <summary>
+        /// Refreshes the chat messages from the server and updates the display if there are new messages.
+        /// </summary>
+        private void RefreshChat()
+        {
+            try
+            {
+                var messages = api.GetChatMessages(currentSessionId);
+                if (messages.Count != currentMessages.Count)
+                {
+                    currentMessages = messages;
+                    UpdateChatDisplay();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Do not show error for periodic refresh
+            }
+        }
+
+        /// <summary>
+        /// Updates the chat display in the rich text box with the current messages.
+        /// </summary>
+        private void UpdateChatDisplay()
+        {
+            richTextBox1.Clear();
+            foreach (var msg in currentMessages)
+            {
+                richTextBox1.SelectionStart = richTextBox1.TextLength;
+                richTextBox1.SelectionLength = 0;
+
+                // Different color for each side
+                if (msg.IsFromAdmin)
+                    richTextBox1.SelectionBackColor = System.Drawing.Color.LightBlue;
+                else
+                    richTextBox1.SelectionBackColor = System.Drawing.Color.LightGray;
+
+                // Name + message
+                string prefix = msg.IsFromAdmin ? "🛎️ Admin" : "👤 You";
+                richTextBox1.SelectionFont = new System.Drawing.Font("Segoe UI", 10, System.Drawing.FontStyle.Bold);
+
+                richTextBox1.AppendText($"{prefix}: ");
+
+                // Regular text (not name)
+                richTextBox1.SelectionFont = new System.Drawing.Font("Segoe UI", 10, System.Drawing.FontStyle.Regular);
+                richTextBox1.AppendText($"{msg.Message} ");
+                richTextBox1.SelectionFont = new System.Drawing.Font("Segoe UI", 8, System.Drawing.FontStyle.Italic);
+                richTextBox1.AppendText($"({msg.Timestamp:HH:mm})\n");
+
+                // Reset color
+                richTextBox1.SelectionBackColor = richTextBox1.BackColor;
+            }
+            richTextBox1.SelectionStart = richTextBox1.Text.Length;
+            richTextBox1.ScrollToCaret();
+        }
+
+        /// <summary>
+        /// Sends a chat message from the guest to the server and refreshes the chat display.
+        /// </summary>
+        private void SendChatMessage()
+        {
+            string messageText = textBox_message.Text.Trim();
+            if (string.IsNullOrEmpty(messageText))
+                return;
+
+            try
+            {
+                var message = new ChatMessage
+                {
+                    SenderName = "Guest",
+                    Message = messageText,
+                    IsFromAdmin = false,
+                    SessionId = currentSessionId
+                };
+
+                api.SendChatMessage(message);
+                textBox_message.Clear();
+                RefreshChat();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to send message: " + ex.Message, "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Sends the initial greeting message from the admin to the guest when the form loads.
+        /// </summary>
+        private void SendInitialGreeting()
+        {
+            try
+            {
+                var message = new ChatMessage
+                {
+                    SenderName = "Admin",
+                    Message = "How can I help you?",
+                    IsFromAdmin = true,
+                    SessionId = currentSessionId
+                };
+                api.SendChatMessage(message);
+                RefreshChat();
+            }
+            catch
+            {
+                // Do not disturb user if this fails
+            }
+        }
+
+        /// <summary>
+        /// Handles the Send button click event to send a chat message.
+        /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event arguments.</param>
+        private void buttonSend_Click(object sender, EventArgs e)
+        {
+            SendChatMessage();
+        }
+
+        /// <summary>
+        /// Handles the KeyPress event for the message textbox to send a message on Enter key.
+        /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The key press event arguments.</param>
+        private void textBox_message_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == (char)Keys.Enter)
+            {
+                SendChatMessage();
+                e.Handled = true;
+            }
         }
     }
 }

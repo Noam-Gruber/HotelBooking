@@ -7,13 +7,13 @@ namespace Server.Migrations
     using System.Resources;
     
     [GeneratedCode("EntityFramework.Migrations", "6.5.1")]
-    public sealed partial class UpdateBookingModel : IMigrationMetadata
+    public sealed partial class AddChatFeature : IMigrationMetadata
     {
-        private readonly ResourceManager Resources = new ResourceManager(typeof(UpdateBookingModel));
+        private readonly ResourceManager Resources = new ResourceManager(typeof(AddChatFeature));
         
         string IMigrationMetadata.Id
         {
-            get { return "202505151948018_UpdateBookingModel"; }
+            get { return "202505231406400_AddChatFeature"; }
         }
         
         string IMigrationMetadata.Source
