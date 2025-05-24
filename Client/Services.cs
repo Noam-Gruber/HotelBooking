@@ -167,8 +167,10 @@ namespace Client
         }
 
         /// <summary>
-        /// שולח הודעת צ'אט לשרת
+        /// Sends a chat message to the server.
         /// </summary>
+        /// <param name="message">The chat message to send.</param>
+        /// <exception cref="Exception">Thrown if the server fails to send the message.</exception>
         public void SendChatMessage(ChatMessage message)
         {
             var req = new RequestMessage { Command = "sendchat", ChatMessage = message };
@@ -182,8 +184,11 @@ namespace Client
         }
 
         /// <summary>
-        /// מקבל הודעות צ'אט עבור סשן מסוים
+        /// Retrieves chat messages for a specific session.
         /// </summary>
+        /// <param name="sessionId">The session identifier.</param>
+        /// <returns>A list of chat messages for the session.</returns>
+        /// <exception cref="Exception">Thrown if the server fails to retrieve messages.</exception>
         public List<ChatMessage> GetChatMessages(string sessionId)
         {
             WriteEncrypted(new RequestMessage { Command = "getchat", SessionId = sessionId });
@@ -197,8 +202,10 @@ namespace Client
         }
 
         /// <summary>
-        /// מקבל את כל הודעות הצ'אט (לאדמין)
+        /// Retrieves all chat messages (admin only).
         /// </summary>
+        /// <returns>A list of all chat messages.</returns>
+        /// <exception cref="Exception">Thrown if the server fails to retrieve messages.</exception>
         public List<ChatMessage> GetAllChatMessages()
         {
             WriteEncrypted(new RequestMessage { Command = "getallchats" });
@@ -211,6 +218,11 @@ namespace Client
             return resp.Data ?? new List<ChatMessage>();
         }
 
+        /// <summary>
+        /// Deletes chat messages older than the specified number of minutes.
+        /// </summary>
+        /// <param name="minutes">The age in minutes; messages older than this will be deleted.</param>
+        /// <exception cref="Exception">Thrown if the server fails to delete old chats.</exception>
         public void DeleteOldChats(int minutes)
         {
             WriteEncrypted(new RequestMessage { Command = "deleteoldchats", Minutes = minutes });

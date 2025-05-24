@@ -124,16 +124,22 @@ namespace Client.Forms
         /// <summary>
         /// Handles the Refresh button click event to reload bookings.
         /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event arguments.</param>
         private void btnRefresh_Click(object sender, EventArgs e) => LoadBookings();
 
         /// <summary>
         /// Handles the TextChanged event for the search textbox to apply the filter.
         /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event arguments.</param>
         private void txtSearch_TextChanged(object sender, EventArgs e) => ApplyFilter();
 
         /// <summary>
         /// Handles the Add button click event to open the booking form and add a new booking.
         /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event arguments.</param>
         private void btnAdd_Click(object sender, EventArgs e)
         {
             using (var bookingForm = new BookingForm(api))
@@ -149,6 +155,8 @@ namespace Client.Forms
         /// <summary>
         /// Handles the CellEndEdit event for the data grid to update a booking after editing.
         /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event arguments.</param>
         private void dataGridView_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
             var row = dataGridView.Rows[e.RowIndex].DataBoundItem as Booking;
@@ -169,6 +177,8 @@ namespace Client.Forms
         /// <summary>
         /// Handles the CellContentClick event for the data grid to delete a booking when the delete button is clicked.
         /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event arguments.</param>
         private void dataGridView_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.ColumnIndex == dataGridView.Columns["colDelete"].Index && e.RowIndex >= 0)
@@ -197,6 +207,8 @@ namespace Client.Forms
         /// <summary>
         /// Handles the RowPrePaint event to highlight future bookings in the data grid.
         /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event arguments.</param>
         private void DataGridView_RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e)
         {
             var row = dataGridView.Rows[e.RowIndex].DataBoundItem as Booking;
@@ -357,6 +369,8 @@ namespace Client.Forms
         /// <summary>
         /// Handles the Send button click event to send an admin chat message.
         /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event arguments.</param>
         private void buttonSend_Click(object sender, EventArgs e)
         {
             SendAdminMessage();
@@ -365,6 +379,8 @@ namespace Client.Forms
         /// <summary>
         /// Handles the KeyPress event for the message textbox to send a message on Enter key.
         /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The key press event arguments.</param>
         private void textBox_message_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == (char)Keys.Enter)
@@ -377,6 +393,8 @@ namespace Client.Forms
         /// <summary>
         /// Handles the SelectedIndexChanged event for the clients combo box to update the chat display.
         /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event arguments.</param>
         private void comboBoxClients_SelectedIndexChanged(object sender, EventArgs e)
         {
             UpdateAdminChatDisplay();
@@ -385,6 +403,8 @@ namespace Client.Forms
         /// <summary>
         /// Handles the Delete Old Chats button click event to delete chats older than 5 minutes.
         /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event arguments.</param>
         private void btnDeleteOldChats_Click(object sender, EventArgs e)
         {
             try
