@@ -64,10 +64,10 @@
             this.btnNewBooking.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnNewBooking.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
             this.btnNewBooking.ForeColor = System.Drawing.Color.White;
-            this.btnNewBooking.Location = new System.Drawing.Point(921, 617);
+            this.btnNewBooking.Location = new System.Drawing.Point(28, 530);
             this.btnNewBooking.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.btnNewBooking.Name = "btnNewBooking";
-            this.btnNewBooking.Size = new System.Drawing.Size(261, 86);
+            this.btnNewBooking.Size = new System.Drawing.Size(276, 86);
             this.btnNewBooking.TabIndex = 1;
             this.btnNewBooking.Text = "🛎️ New Booking";
             this.btnNewBooking.UseVisualStyleBackColor = false;
@@ -81,10 +81,10 @@
             this.btnAdminLogin.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnAdminLogin.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
             this.btnAdminLogin.ForeColor = System.Drawing.Color.White;
-            this.btnAdminLogin.Location = new System.Drawing.Point(18, 617);
+            this.btnAdminLogin.Location = new System.Drawing.Point(28, 626);
             this.btnAdminLogin.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.btnAdminLogin.Name = "btnAdminLogin";
-            this.btnAdminLogin.Size = new System.Drawing.Size(254, 86);
+            this.btnAdminLogin.Size = new System.Drawing.Size(276, 86);
             this.btnAdminLogin.TabIndex = 2;
             this.btnAdminLogin.Text = "🔑 Admin Login";
             this.btnAdminLogin.UseVisualStyleBackColor = false;
@@ -105,7 +105,7 @@
             // 
             this.lblTip.AutoSize = true;
             this.lblTip.ForeColor = System.Drawing.Color.DarkGray;
-            this.lblTip.Location = new System.Drawing.Point(494, 691);
+            this.lblTip.Location = new System.Drawing.Point(495, 718);
             this.lblTip.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblTip.Name = "lblTip";
             this.lblTip.Size = new System.Drawing.Size(264, 20);
@@ -117,7 +117,7 @@
             this.pictureBoxSlideshow.Location = new System.Drawing.Point(270, 123);
             this.pictureBoxSlideshow.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.pictureBoxSlideshow.Name = "pictureBoxSlideshow";
-            this.pictureBoxSlideshow.Size = new System.Drawing.Size(680, 402);
+            this.pictureBoxSlideshow.Size = new System.Drawing.Size(680, 390);
             this.pictureBoxSlideshow.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBoxSlideshow.TabIndex = 5;
             this.pictureBoxSlideshow.TabStop = false;
@@ -150,19 +150,19 @@
             this.groupBox_chat.Controls.Add(this.richTextBox1);
             this.groupBox_chat.Controls.Add(this.textBox_message);
             this.groupBox_chat.Controls.Add(this.buttonSend);
-            this.groupBox_chat.Location = new System.Drawing.Point(289, 533);
+            this.groupBox_chat.Location = new System.Drawing.Point(311, 533);
             this.groupBox_chat.Name = "groupBox_chat";
-            this.groupBox_chat.Size = new System.Drawing.Size(625, 148);
+            this.groupBox_chat.Size = new System.Drawing.Size(862, 169);
             this.groupBox_chat.TabIndex = 26;
             this.groupBox_chat.TabStop = false;
-            this.groupBox_chat.Text = "Chat";
+            this.groupBox_chat.Text = "Online Chat with Admin";
             // 
             // richTextBox1
             // 
             this.richTextBox1.Location = new System.Drawing.Point(296, 18);
             this.richTextBox1.Name = "richTextBox1";
             this.richTextBox1.ReadOnly = true;
-            this.richTextBox1.Size = new System.Drawing.Size(323, 124);
+            this.richTextBox1.Size = new System.Drawing.Size(554, 139);
             this.richTextBox1.TabIndex = 2;
             this.richTextBox1.Text = "";
             // 
@@ -192,7 +192,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.AliceBlue;
-            this.ClientSize = new System.Drawing.Size(1200, 729);
+            this.ClientSize = new System.Drawing.Size(1200, 807);
             this.Controls.Add(this.groupBox_chat);
             this.Controls.Add(this.accentBar);
             this.Controls.Add(this.lblQuote);
