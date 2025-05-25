@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Media;
 using System.Drawing;
 using Common.Entities;
@@ -206,6 +207,7 @@ namespace Client.Forms
 
         /// <summary>
         /// Refreshes the chat messages from the server and updates the display if there are new messages.
+        /// Plays a notification sound if the latest message is from the admin.
         /// </summary>
         private void RefreshChat()
         {
@@ -214,6 +216,12 @@ namespace Client.Forms
                 var messages = api.GetChatMessages(currentSessionId);
                 if (messages.Count != currentMessages.Count)
                 {
+                    // Play notification if the new message is from admin
+                    var lastMsg = messages.LastOrDefault();
+                    if (lastMsg != null && lastMsg.IsFromAdmin)
+                    {
+                        PlayNotificationSound();
+                    }
                     currentMessages = messages;
                     UpdateChatDisplay();
                 }
@@ -221,6 +229,28 @@ namespace Client.Forms
             catch (Exception ex)
             {
                 // Do not show error for periodic refresh
+            }
+        }
+
+        /// <summary>
+        /// Plays a notification sound when a new admin message is received.
+        /// </summary>
+        private void PlayNotificationSound()
+        {
+            try
+            {
+                var soundPath = Path.Combine(Directory.GetParent(Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName).FullName).FullName, @"Sounds\notify.wav");
+                if (File.Exists(soundPath))
+                {
+                    using (var player = new SoundPlayer(soundPath))
+                    {
+                        player.Play();
+                    }
+                }
+            }
+            catch
+            {
+                // Do not disturb user experience if this fails
             }
         }
 

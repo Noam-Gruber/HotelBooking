@@ -120,6 +120,7 @@
     <Content Include="Images\hotel2.png" />
     <Content Include="Images\hotel3.png" />
     <Content Include="Images\icon_hotel.ico" />
+    <Content Include="Sounds\notify.wav" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj">
@@ -127,5 +128,6 @@
       <Name>Common</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
