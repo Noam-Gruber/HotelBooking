@@ -418,5 +418,65 @@ namespace Client.Forms
                 MessageBox.Show("Error deleting chats: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        /// <summary>
+        /// Handles the Export CSV button click event to export bookings to a CSV file.
+        /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event arguments.</param>
+        private void btnExportCsv_Click(object sender, EventArgs e)
+        {
+            using (SaveFileDialog saveDialog = new SaveFileDialog())
+            {
+                saveDialog.Filter = "CSV files (*.csv)|*.csv";
+                saveDialog.FileName = "bookings.csv";
+                if (saveDialog.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        ExportBookingsToCsv(saveDialog.FileName);
+                        MessageBox.Show("Export successful!", "CSV Export", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Export failed:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Exports the current bookings to a CSV file at the specified path.
+        /// </summary>
+        /// <param name="filePath">The file path to export the CSV to.</param>
+        private void ExportBookingsToCsv(string filePath)
+        {
+            var bookings = currentBookings; // All current bookings
+
+            using (var writer = new System.IO.StreamWriter(filePath, false, System.Text.Encoding.UTF8))
+            {
+                // Write column headers
+                writer.WriteLine("Id,GuestName,Email,CheckInDate,CheckOutDate,RoomType,NumberOfGuests,CardNumber,ExpiryMonth,ExpiryYear");
+
+                foreach (var b in bookings)
+                {
+                    // Avoid commas inside values by quoting and escaping quotes
+                    string line = string.Format(
+                        "\"{0}\",\"{1}\",\"{2}\",\"{3:yyyy-MM-dd}\",\"{4:yyyy-MM-dd}\",\"{5}\",{6},\"{7}\",{8},{9}",
+                        b.Id,
+                        b.GuestName?.Replace("\"", "\"\""),
+                        b.Email?.Replace("\"", "\"\""),
+                        b.CheckInDate,
+                        b.CheckOutDate,
+                        b.RoomType?.Replace("\"", "\"\""),
+                        b.NumberOfGuests,
+                        b.CardNumber?.Replace("\"", "\"\""),
+                        b.ExpiryMonth,
+                        b.ExpiryYear
+                    );
+                    writer.WriteLine(line);
+                }
+            }
+        }
     }
 }

@@ -36,12 +36,13 @@
             this.pictureBox = new System.Windows.Forms.PictureBox();
             this.accentBar = new System.Windows.Forms.Panel();
             this.groupBox_chat = new System.Windows.Forms.GroupBox();
+            this.btnDeleteOldChats = new System.Windows.Forms.Button();
             this.labelSelectClient = new System.Windows.Forms.Label();
             this.comboBoxClients = new System.Windows.Forms.ComboBox();
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.textBox_message = new System.Windows.Forms.TextBox();
             this.buttonSend = new System.Windows.Forms.Button();
-            this.btnDeleteOldChats = new System.Windows.Forms.Button();
+            this.btnExportCsv = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).BeginInit();
             this.groupBox_chat.SuspendLayout();
@@ -138,6 +139,16 @@
             this.groupBox_chat.TabStop = false;
             this.groupBox_chat.Text = "Chat";
             // 
+            // btnDeleteOldChats
+            // 
+            this.btnDeleteOldChats.Location = new System.Drawing.Point(178, 13);
+            this.btnDeleteOldChats.Name = "btnDeleteOldChats";
+            this.btnDeleteOldChats.Size = new System.Drawing.Size(160, 32);
+            this.btnDeleteOldChats.TabIndex = 5;
+            this.btnDeleteOldChats.Text = "Delete Old Chats";
+            this.btnDeleteOldChats.UseVisualStyleBackColor = true;
+            this.btnDeleteOldChats.Click += new System.EventHandler(this.btnDeleteOldChats_Click);
+            // 
             // labelSelectClient
             // 
             this.labelSelectClient.AutoSize = true;
@@ -186,15 +197,19 @@
             this.buttonSend.UseVisualStyleBackColor = false;
             this.buttonSend.Click += new System.EventHandler(this.buttonSend_Click);
             // 
-            // btnDeleteOldChats
+            // btnExportCsv
             // 
-            this.btnDeleteOldChats.Location = new System.Drawing.Point(178, 13);
-            this.btnDeleteOldChats.Name = "btnDeleteOldChats";
-            this.btnDeleteOldChats.Size = new System.Drawing.Size(160, 32);
-            this.btnDeleteOldChats.TabIndex = 5;
-            this.btnDeleteOldChats.Text = "Delete Old Chats";
-            this.btnDeleteOldChats.UseVisualStyleBackColor = true;
-            this.btnDeleteOldChats.Click += new System.EventHandler(this.btnDeleteOldChats_Click);
+            this.btnExportCsv.BackColor = System.Drawing.Color.DeepSkyBlue;
+            this.btnExportCsv.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnExportCsv.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F);
+            this.btnExportCsv.ForeColor = System.Drawing.Color.White;
+            this.btnExportCsv.Location = new System.Drawing.Point(1054, 38);
+            this.btnExportCsv.Name = "btnExportCsv";
+            this.btnExportCsv.Size = new System.Drawing.Size(233, 48);
+            this.btnExportCsv.TabIndex = 26;
+            this.btnExportCsv.Text = "Export to CSV";
+            this.btnExportCsv.UseVisualStyleBackColor = false;
+            this.btnExportCsv.Click += new System.EventHandler(this.btnExportCsv_Click);
             // 
             // AdminForm
             // 
@@ -202,6 +217,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.AliceBlue;
             this.ClientSize = new System.Drawing.Size(1299, 663);
+            this.Controls.Add(this.btnExportCsv);
             this.Controls.Add(this.groupBox_chat);
             this.Controls.Add(this.accentBar);
             this.Controls.Add(this.pictureBox);
@@ -236,5 +252,6 @@
         private System.Windows.Forms.ComboBox comboBoxClients;
         private System.Windows.Forms.Label labelSelectClient;
         private System.Windows.Forms.Button btnDeleteOldChats;
+        private System.Windows.Forms.Button btnExportCsv;
     }
 }
